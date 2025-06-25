@@ -9,6 +9,7 @@ from sqlalchemy.orm import Mapped
 class ItemKind(str, Enum):
     CONSUMABLE = 'расходник'
     CURRENCY = 'валюта'
+    CURRENCY2 = 'валюта2'
 
 
 class InventoryItem(SQLModel, table=True):
@@ -23,6 +24,13 @@ class InventoryItem(SQLModel, table=True):
     amount: int = Field(default=0, ge=0)
 
 
+class ItemCreate(SQLModel):
+    name: str
+    description: str | None = None
+    script: str | None = None
+    kind: ItemKind = ItemKind.CONSUMABLE
+
+
 class Item(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True, index=True)
     name: str = Field(unique=True, index=True)
@@ -35,8 +43,10 @@ class Item(SQLModel, table=True):
     inventories: list['Inventory'] = Relationship(
         back_populates='linked_items',
         link_model=InventoryItem,
-        #sa_relationship_kwargs={'cascade': 'all, delete-orphan'}
     )
+
+    class Config:
+        use_enum_values = True
 
 
 class Inventory(SQLModel, table=True):

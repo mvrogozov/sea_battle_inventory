@@ -33,7 +33,7 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('script', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('kind', postgresql.ENUM('CONSUMABLE', 'CURRENCY', name='item_kind'), nullable=False),
+    sa.Column('kind', postgresql.ENUM('CONSUMABLE', 'CURRENCY', name='item_kind', create_type=False), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_item_id'), 'item', ['id'], unique=False)

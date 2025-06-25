@@ -1,10 +1,13 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 from app.inventory.models import Item
+from app.base import BaseDAO
 
 
-class ItemRepository:
-    def __init__(self, session: AsyncSession):
-        self.session = session
+class ItemRepository(BaseDAO):
+    model = Item
+
+    # def __init__(self, session: AsyncSession):
+    #     self.session = session
 
     async def create(self, item_data: dict) -> Item:
         item = Item(**item_data)
