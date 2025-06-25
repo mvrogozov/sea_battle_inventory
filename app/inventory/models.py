@@ -1,15 +1,12 @@
 from enum import Enum
-from typing import List
 
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 from sqlmodel import Field, SQLModel, Relationship
-from sqlalchemy.orm import Mapped
 
 
 class ItemKind(str, Enum):
     CONSUMABLE = 'расходник'
     CURRENCY = 'валюта'
-    CURRENCY2 = 'валюта2'
 
 
 class InventoryItem(SQLModel, table=True):
@@ -29,6 +26,25 @@ class ItemCreate(SQLModel):
     description: str | None = None
     script: str | None = None
     kind: ItemKind = ItemKind.CONSUMABLE
+
+
+class InventoryCreate(SQLModel):
+    user_id: int = Field(unique=True, index=True)
+    linked_items: list['Item'] = Relationship(
+        back_populates='inventories',
+        link_model=InventoryItem,
+    )
+
+
+class InventoryItemResponse(SQLModel):
+    item_id: int
+    name: str
+    amount: int
+
+
+class InventoryResponse(SQLModel):
+    user_id: int
+    items: list[InventoryItemResponse] = []
 
 
 class Item(SQLModel, table=True):
@@ -56,9 +72,3 @@ class Inventory(SQLModel, table=True):
         back_populates='inventories',
         link_model=InventoryItem,
     )
-# class Book(SQLModel, table=True):
-#     id: int | None = Field(default=None, primary_key=True, index=True)
-#     title: str
-#     author: str
-
-
