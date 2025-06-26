@@ -1,17 +1,35 @@
+import logging
+
 from fastapi import FastAPI
-from sqlmodel import SQLModel
 from contextlib import asynccontextmanager
 
-from app.api import items, inventory
-from app.database import engine, init_db
+from sqlalchemy.exc import SQLAlchemyError
+
+from app.api.items import router as item_router
+from app.database import init_db
+
+# Logging setup
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(asctime)s - %(name)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    await init_db()
+    """"""
+    try:
+        logger.info("Initializing database...")
+        await init_db()
+    except SQLAlchemyError as e:
+        logger.critical(f"Failed to initialize database: {e}")
+        raise
+
     yield
+    logger.info("Application shutdown started")
+    logger.info("Application shutdown completed")
+
 
 app = FastAPI(lifespan=lifespan)
-app.include_router(items.router)
-app.include_router(inventory.router)
-# app.include_router(inventories.router)
+app.include_router(item_router)
