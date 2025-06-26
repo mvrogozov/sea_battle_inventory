@@ -8,27 +8,18 @@ router = APIRouter(prefix="/items")
 
 
 @router.post("/", response_model=Item)
-async def create_item(
-    item: ItemCreate,
-    session: AsyncSession = Depends(get_session)
-):
+async def create_item(item: ItemCreate):
     repo = ItemRepository()
-    print(f'items 16 >> {item.model_dump()}')
-    return await repo.add(session, values=item.model_dump())
+    return await repo.add(item.model_dump())
 
 
 @router.get("/", response_model=list[Item])
-async def get_items(
-    session: AsyncSession = Depends(get_session)
-):
+async def get_items():
     repo = ItemRepository()
-    return await repo.find_all(session)
+    return await repo.find_all()
 
 
 @router.get("/{item_id}", response_model=Item | None)
-async def get_item_by_id(
-    item_id: int,
-    session: AsyncSession = Depends(get_session)
-):
+async def get_item_by_id(item_id: int):
     repo = ItemRepository()
-    return await repo.find_one_or_none_by_id(session, item_id)
+    return await repo.find_one_or_none_by_id(item_id)

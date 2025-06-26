@@ -9,44 +9,33 @@ router = APIRouter(prefix='/inventory')
 
 
 @router.post('/', response_model=Inventory)
-async def create_inventory(
-    inventory: InventoryCreate,
-    session: AsyncSession = Depends(get_session)
-):
+async def create_inventory(inventory: InventoryCreate):
     repo = InventoryRepository()
-    return await repo.add(session, values=inventory.model_dump())
+    return await repo.add(inventory.model_dump())
 
 
 @router.get('/', response_model=list[Inventory])
-async def get_inventories(
-    session: AsyncSession = Depends(get_session)
-):
+async def get_inventories():
     repo = InventoryRepository()
-    return await repo.find_all(session)
+    return await repo.find_all()
 
 
 @router.post('/{item_id}', response_model=Inventory | None)
 async def add_item_to_inventory(
     item_id: int,
     amount: int,
-    session: AsyncSession = Depends(get_session)
 ):
     repo = InventoryRepository()
-    return await repo.add_item(session, 777, item_id, amount)
+    return await repo.add_item(777, item_id, amount)
 
 
 @router.get('/user_inventory', response_model=InventoryResponse)
-async def get_user_inventory(
-    session: AsyncSession = Depends(get_session)
-):
+async def get_user_inventory():
     repo = InventoryRepository()
-    return await repo.get_user_inventory(session, 777)
+    return await repo.get_user_inventory(777)
 
 
-@router.get('/{inventory_id}', response_model=Inventory | None)
-async def get_inventory_by_id(
-    inventory_id: int,
-    session: AsyncSession = Depends(get_session)
-):
+@router.get('/{inventory_id}', response_model=InventoryResponse | None)
+async def get_inventory_by_id(inventory_id: int,):
     repo = InventoryRepository()
-    return await repo.find_one_or_none_by_id(session, inventory_id)
+    return await repo.get_inventory_by_id(inventory_id)
