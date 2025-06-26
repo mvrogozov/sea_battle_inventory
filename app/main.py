@@ -7,6 +7,7 @@ from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.items import router as item_router
 from app.database import init_db
+from app.api.inventory import router as inventory_router
 
 # Logging setup
 logging.basicConfig(
@@ -33,3 +34,4 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(item_router)
+app.include_router(inventory_router)
