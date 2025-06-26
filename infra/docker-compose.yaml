@@ -16,3 +16,31 @@ services:
         max-file: "3"
     volumes:
       - ../.data/db:/var/lib/postgresql/data
+
+  backend:
+    container_name: backend-inventory
+    build:
+      context: ../
+      dockerfile: ./app/Dockerfile
+    restart: always
+    mem_limit: 1G
+    depends_on:
+      - postgresdb
+    env_file:
+      - .env
+
+  nginx:
+    build:
+      dockerfile: ./Dockerfile
+    container_name: nginx-inventory
+    restart: always
+    mem_limit: 512m
+    volumes:
+      - type: bind
+        source: ./default.conf.conf
+        target: /etc/nginx/templates/default.conf.conf
+
+    environment:
+      NGINX_ENVSUBST_TEMPLATE_SUFFIX: .conf
+    ports:
+      - "${HTTP_PORT}:80"

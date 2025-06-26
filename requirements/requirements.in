@@ -4,3 +4,4 @@ uvicorn
 pydantic_settings
 alembic
 asyncpg
+gunicorn
