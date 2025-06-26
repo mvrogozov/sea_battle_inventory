@@ -32,15 +32,15 @@ async def add_item_to_inventory(
     session: AsyncSession = Depends(get_session)
 ):
     repo = InventoryRepository()
-    return await repo.add_item(session, 333, item_id, amount)
+    return await repo.add_item(session, 777, item_id, amount)
 
 
-@router.get('/full-info', response_model=InventoryResponse)
-async def get_inventories_full(
+@router.get('/user_inventory', response_model=InventoryResponse)
+async def get_user_inventory(
     session: AsyncSession = Depends(get_session)
 ):
     repo = InventoryRepository()
-    return await repo.get_inventory_with_items(session, 333)
+    return await repo.get_user_inventory(session, 777)
 
 
 @router.get('/{inventory_id}', response_model=Inventory | None)
