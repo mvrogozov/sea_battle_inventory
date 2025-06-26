@@ -1,16 +1,12 @@
 from fastapi import HTTPException, status
-from sqlmodel.ext.asyncio.session import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy import (
-    update as sqlalchemy_update, delete as sqlalchemy_delete, func
-)
 
+from app.database import get_session
 from app.inventory.models import (
-    Inventory, Item, InventoryItem, InventoryItemResponse, InventoryResponse
+    Inventory, Item, InventoryItem,
 )
 from app.base import BaseDAO
-from app.database import async_session_maker
+from app.inventory.scemas import InventoryItemResponse, InventoryResponse
 
 
 class InventoryRepository(BaseDAO):
@@ -18,12 +14,12 @@ class InventoryRepository(BaseDAO):
 
     @classmethod
     async def add_item(
-        cls,
-        user_id: int,
-        item_id: int,
-        amount: int
+            cls,
+            user_id: int,
+            item_id: int,
+            amount: int
     ):
-        async with async_session_maker() as session:
+        async with get_session() as session:
             async with session.begin():
                 query = select(cls.model).filter_by(user_id=user_id)
                 result = await session.exec(query)
@@ -76,10 +72,10 @@ class InventoryRepository(BaseDAO):
 
     @classmethod
     async def get_user_inventory(
-        cls,
-        user_id: int
+            cls,
+            user_id: int
     ):
-        async with async_session_maker() as session:
+        async with get_session() as session:
             async with session.begin():
                 query = select(cls.model).filter_by(user_id=user_id)
                 result = await session.execute(query)
@@ -118,10 +114,10 @@ class InventoryRepository(BaseDAO):
 
     @classmethod
     async def get_inventory_by_id(
-        cls,
-        inventory_id: int
+            cls,
+            inventory_id: int
     ):
-        async with async_session_maker() as session:
+        async with get_session() as session:
             async with session.begin():
                 inv_obj = await session.get(Inventory, inventory_id)
                 if not inv_obj:
@@ -154,4 +150,3 @@ class InventoryRepository(BaseDAO):
                     user_id=inv_obj.user_id,
                     items=items
                 )
-            

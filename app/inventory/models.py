@@ -3,10 +3,7 @@ from enum import Enum
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 from sqlmodel import Field, SQLModel, Relationship
 
-
-class ItemKind(str, Enum):
-    CONSUMABLE = 'расходник'
-    CURRENCY = 'валюта'
+from app.inventory.scemas import ItemKind
 
 
 class InventoryItem(SQLModel, table=True):
@@ -21,31 +18,12 @@ class InventoryItem(SQLModel, table=True):
     amount: int = Field(default=0, ge=0)
 
 
-class ItemCreate(SQLModel):
-    name: str
-    description: str | None = None
-    script: str | None = None
-    kind: ItemKind = ItemKind.CONSUMABLE
-
-
 class InventoryCreate(SQLModel):
     user_id: int = Field(unique=True, index=True)
     linked_items: list['Item'] = Relationship(
         back_populates='inventories',
         link_model=InventoryItem,
     )
-
-
-class InventoryItemResponse(SQLModel):
-    item_id: int
-    name: str
-    amount: int
-
-
-class InventoryResponse(SQLModel):
-    user_id: int
-    items: list[InventoryItemResponse] = []
-
 
 class Item(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True, index=True)
