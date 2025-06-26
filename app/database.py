@@ -1,4 +1,5 @@
 import logging
+from contextlib import asynccontextmanager
 from typing import AsyncGenerator
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -16,6 +17,7 @@ engine: AsyncEngine = create_async_engine(settings.db_url)
 async_session_maker = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
 
 
+@asynccontextmanager
 async def get_session() -> AsyncGenerator[AsyncSession, None]:
     """
     Асинхронный генератор сессий для работы с базой данных.
