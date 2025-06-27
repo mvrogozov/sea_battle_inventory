@@ -5,6 +5,8 @@ from pydantic import PostgresDsn, Field
 
 
 class Settings(BaseSettings):
+
+    LOG_PATH: str = 'app/logs'
     db_host: str = Field(alias="DB_HOST")
     db_user: str = Field(alias="POSTGRES_USER")
     db_password: str = Field(alias="POSTGRES_PASSWORD")
@@ -13,8 +15,6 @@ class Settings(BaseSettings):
 
     @property
     def db_url(self) -> PostgresDsn:
-        #raise ValueError(f' postgres+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}')
-        #return f' postgres+asyncpg://{self.db_user}:{self.db_password}@{self.db_host}:{self.db_port}/{self.db_name}'
         return (
             f'postgresql+asyncpg://{self.db_user}:{self.db_password}@'
             f'{self.db_host}:{self.db_port}/{self.db_name}'

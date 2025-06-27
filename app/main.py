@@ -1,10 +1,13 @@
 import logging
+import os
 
+from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
 from sqlalchemy.exc import SQLAlchemyError
 
+from app.config import settings
 from app.api.items import router as item_router
 from app.database import init_db
 from app.api.inventory import router as inventory_router
@@ -15,7 +18,12 @@ logging.basicConfig(
     format='%(levelname)s: %(asctime)s - %(name)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
+handler = RotatingFileHandler(
+    os.path.join(settings.LOG_PATH, 'app.log'),
+    maxBytes=50000,
+    backupCount=1
+)
+logger.addHandler(handler)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

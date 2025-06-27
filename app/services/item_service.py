@@ -1,6 +1,25 @@
+import logging
+import os
+
+from logging.handlers import RotatingFileHandler
+
+from app.config import settings
 from app.inventory.models import Item
-from app.inventory.scemas import ItemCreate
+from app.inventory.schemas import ItemCreate
 from app.repositories.item_repo import ItemRepository
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(levelname)s: %(asctime)s - %(name)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
+handler = RotatingFileHandler(
+    os.path.join(settings.LOG_PATH, 'app_service.log'),
+    maxBytes=50000,
+    backupCount=1
+)
+logger.addHandler(handler)
 
 
 class ItemService:

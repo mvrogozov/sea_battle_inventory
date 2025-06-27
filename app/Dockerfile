@@ -6,4 +6,5 @@ WORKDIR /application
 COPY requirements/requirements.txt .
 RUN pip3 install --upgrade pip && pip3 install -r requirements.txt
 COPY app/ ./app
+RUN mkdir ./app/logs
 CMD ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "-b", "0.0.0.0:8000", "app.main:app"]

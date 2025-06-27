@@ -28,6 +28,8 @@ services:
       - postgresdb
     env_file:
       - .env
+    volumes:
+      - ../log:/application/app/logs
 
   nginx:
     build:

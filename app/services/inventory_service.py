@@ -1,5 +1,7 @@
+import jwt
+
 from app.inventory.models import InventoryCreate, Inventory
-from app.inventory.scemas import ItemToInventory
+from app.inventory.schemas import ItemToInventory
 from app.repositories.inventory_repo import InventoryRepository
 
 
@@ -26,14 +28,23 @@ class InventoryService:
         """
         return await self.inventory_repository.find_all()
 
-    async def add_to_inventory(self, item_to_inventory: ItemToInventory):
+    async def add_to_inventory(
+        self,
+        item_to_inventory: ItemToInventory,
+        token: str | None
+    ):
         """
         Добавить предмет в инвентарь пользователя
         :param item_to_inventory: данные о добавляемом предмете и инвентаре
         :return: обновлённый инвентарь или None
         """
-        ...
-        # return await self.inventory_repository.add_item(item_to_inventory.model_dump())
+        # TODO: get user from token
+        token = token.replace('Bearer ', '')
+        decoded = jwt.decode(token, options={'verify_signature': False})
+        user_id = decoded.get('user_id', 777)
+        fields = item_to_inventory.model_dump()
+        fields.update(user_id=user_id)
+        return await self.inventory_repository.add_item(**fields)
 
     async def get_user_inventory(self, user_id: int):
         """
@@ -49,4 +60,6 @@ class InventoryService:
         :param inventory_id: идентификатор инвентаря
         :return: инвентарь или None
         """
-        return await self.inventory_repository.get_inventory_by_id(inventory_id)
+        return await self.inventory_repository.get_inventory_by_id(
+            inventory_id
+        )
