@@ -2,8 +2,9 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request
 
-from app.inventory.schemas import InventoryResponse, ItemToInventory
+from app.inventory.schemas import InventoryResponse, ItemToInventory, UserInfo
 from app.inventory.models import Inventory, InventoryCreate
+from app.inventory.common import get_current_user, logger
 from app.services.inventory_service import InventoryService
 
 router = APIRouter(prefix='/inventory', tags=["inventory"])
@@ -12,7 +13,8 @@ router = APIRouter(prefix='/inventory', tags=["inventory"])
 @router.post('/', response_model=Inventory)
 async def create_inventory(
     inventory: InventoryCreate,
-    inventory_service: Annotated[InventoryService, Depends()]
+    inventory_service: Annotated[InventoryService, Depends()],
+    user: Annotated[UserInfo, Depends(get_current_user)]
 ):
     """
     Создать новый инвентарь для пользователя.
@@ -20,7 +22,7 @@ async def create_inventory(
     - **inventory**: Данные для создания инвентаря (user_id и т.д.)
     - **returns**: Объект созданного инвентаря.
     """
-    return await inventory_service.create_inventory(inventory)
+    return await inventory_service.create_inventory(inventory, user)
 
 
 @router.get('/', response_model=list[Inventory])

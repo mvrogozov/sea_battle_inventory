@@ -1,7 +1,7 @@
 import jwt
 
 from app.inventory.models import InventoryCreate, Inventory
-from app.inventory.schemas import ItemToInventory
+from app.inventory.schemas import ItemToInventory, UserInfo
 from app.repositories.inventory_repo import InventoryRepository
 
 
@@ -13,13 +13,18 @@ class InventoryService:
 
     inventory_repository = InventoryRepository()
 
-    async def create_inventory(self, inventory: InventoryCreate) -> Inventory:
+    async def create_inventory(
+        self,
+        inventory: InventoryCreate,
+        user: UserInfo
+    ) -> Inventory:
         """
         Создать новый инвентарь для пользователя
         :param inventory: данные для создания инвентаря
         :return: созданный инвентарь
         """
-        return await self.inventory_repository.add(inventory.model_dump())
+        data = {**inventory.model_dump(), **user.model_dump()}
+        return await self.inventory_repository.add_for_current_user(data)
 
     async def get_all(self) -> list[Inventory]:
         """

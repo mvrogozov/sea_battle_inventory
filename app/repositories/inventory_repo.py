@@ -1,16 +1,35 @@
 from fastapi import HTTPException, status
 from sqlalchemy.future import select
+from sqlalchemy.sql import exists
 
 from app.database import get_session
 from app.inventory.models import (
     Inventory, Item, InventoryItem,
 )
 from app.base import BaseDAO
+from app.inventory.common import logger
 from app.inventory.schemas import InventoryItemResponse, InventoryResponse
 
 
 class InventoryRepository(BaseDAO):
     model = Inventory
+
+    @classmethod
+    async def add_for_current_user(cls, values):
+        user_id = values.get('user_id')
+        async with get_session() as session:
+            async with session.begin():
+                query = select(exists().where(cls.model.user_id == user_id))
+                obj = await session.exec(query)
+                obj = obj.one()
+                if obj[0]:
+                    raise HTTPException(
+                        detail='Already exists',
+                        status_code=status.HTTP_409_CONFLICT
+                    )
+                new_instance = cls.model(**values)
+                session.add(new_instance)
+                return new_instance
 
     @classmethod
     async def add_item(
@@ -78,7 +97,7 @@ class InventoryRepository(BaseDAO):
         async with get_session() as session:
             async with session.begin():
                 query = select(cls.model).filter_by(user_id=user_id)
-                result = await session.execute(query)
+                result = await session.exec(query)
                 inv_obj: Inventory = result.scalar_one_or_none()
                 if not inv_obj:
                     raise HTTPException(
@@ -97,7 +116,7 @@ class InventoryRepository(BaseDAO):
                     .join(Item, InventoryItem.item_id == Item.id)
                     .where(InventoryItem.inventory_id == inv_obj.id)
                 )
-                result = await session.execute(query)
+                result = await session.exec(query)
                 items_data = result.all()
                 items = [
                     InventoryItemResponse(

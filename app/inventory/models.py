@@ -17,7 +17,7 @@ class InventoryItem(SQLModel, table=True):
 
 
 class InventoryCreate(SQLModel):
-    user_id: int = Field(unique=True, index=True)
+    # user_id: int = Field(unique=True, index=True)
     linked_items: list['Item'] = Relationship(
         back_populates='inventories',
         link_model=InventoryItem,

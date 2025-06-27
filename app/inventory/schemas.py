@@ -37,3 +37,8 @@ class InventoryItemResponse(SQLModel):
 class InventoryResponse(SQLModel):
     user_id: int
     items: list[InventoryItemResponse] = []
+
+
+class UserInfo(SQLModel):
+    user_id: int
+    role: str
