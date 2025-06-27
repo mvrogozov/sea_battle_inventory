@@ -22,10 +22,11 @@ class ItemCreate(SQLModel):
     script: str | None = None
     kind: ItemKind = ItemKind.CONSUMABLE
 
+
 class ItemToInventory(BaseModel):
-    user_id: int
     item_id: int
     amount: int
+
 
 class InventoryItemResponse(SQLModel):
     item_id: int

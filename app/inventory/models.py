@@ -1,9 +1,7 @@
-from enum import Enum
-
 from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
 from sqlmodel import Field, SQLModel, Relationship
 
-from app.inventory.scemas import ItemKind
+from app.inventory.schemas import ItemKind
 
 
 class InventoryItem(SQLModel, table=True):
@@ -24,6 +22,7 @@ class InventoryCreate(SQLModel):
         back_populates='inventories',
         link_model=InventoryItem,
     )
+
 
 class Item(SQLModel, table=True):
     id: int | None = Field(default=None, primary_key=True, index=True)

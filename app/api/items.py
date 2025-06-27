@@ -3,9 +3,10 @@ from typing import Annotated
 from fastapi import APIRouter
 from fastapi.params import Depends
 
-from app.inventory.scemas import ItemCreate
+from app.inventory.schemas import ItemCreate
 from app.inventory.models import Item
 from app.services.item_service import ItemService
+
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -17,7 +18,7 @@ async def create_item(
 ):
     """
     Создать новый предмет.
-    
+
     - **item**: Данные нового предмета (название, описание, тип, скрипт и т.д.)
     - **returns**: Объект созданного предмета.
     """
@@ -30,7 +31,7 @@ async def get_items(
 ):
     """
     Получить список всех предметов.
-    
+
     - **returns**: Список всех предметов в системе.
     """
     return await item_service.get_all_items()
@@ -43,7 +44,7 @@ async def get_item_by_id(
 ):
     """
     Получить предмет по его ID.
-    
+
     - **item_id**: Идентификатор предмета
     - **returns**: Объект предмета или None, если не найден
     """

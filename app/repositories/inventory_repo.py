@@ -6,7 +6,7 @@ from app.inventory.models import (
     Inventory, Item, InventoryItem,
 )
 from app.base import BaseDAO
-from app.inventory.scemas import InventoryItemResponse, InventoryResponse
+from app.inventory.schemas import InventoryItemResponse, InventoryResponse
 
 
 class InventoryRepository(BaseDAO):
