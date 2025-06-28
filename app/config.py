@@ -29,3 +29,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+os.makedirs(settings.LOG_PATH, exist_ok=True)
