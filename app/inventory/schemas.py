@@ -16,6 +16,16 @@ class ItemKind(str, Enum):
     CURRENCY = 'валюта'
 
 
+class BaseItem(BaseModel):
+    name: str
+    kind: ItemKind
+    description: str
+
+
+class ItemResponse(BaseItem):
+    id: int
+
+
 class ItemCreate(SQLModel):
     name: str
     description: str | None = None
