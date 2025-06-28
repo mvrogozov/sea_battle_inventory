@@ -21,3 +21,14 @@ class RepositoryError(BaseAppException):
 class ServiceError(BaseAppException):
     """Ошибка сервиса"""
     pass
+
+class NotFoundError(BaseAppException):
+    """"Ошибка если редмет или инвентарь не найден"""
+    pass
+
+class NotAdminError(BaseAppException):
+    """ошибка если пользователь не администратор"""
+
+class InventoryAlreadyExistsError(Exception):
+    """Ошибка если инвентарь для пользователя уже существует"""
+    pass
