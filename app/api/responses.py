@@ -1,11 +1,22 @@
 from fastapi import status
 
-ITEM_NOT_FOUND_RESPONSE = {
+NOT_FOUND_RESPONSE = {
     status.HTTP_404_NOT_FOUND: {
-        "description": "Предмет не найден",
+        "description": "Предмет или инвентарь не найден",
         "content": {
             "application/json": {
-                "example": {"detail": "Item with ID {item_id} not found"}
+                "example": {"detail": "Предмет с ID {item_id} не найден"}
+            }
+        }
+    }
+}
+
+ALREADY_EXISTS = {
+status.HTTP_409_CONFLICT: {
+        "description": "Запись уже существует",
+        "content": {
+            "application/json": {
+                "example": {"detail": "Inventory for this user already exists"}
             }
         }
     }
