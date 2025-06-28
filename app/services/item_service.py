@@ -4,7 +4,7 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from app.config import settings
-from app.exceptions import DatabaseError, ServiceError, ValidationError
+from app.exceptions import DatabaseError, ServiceError, ValidationError, NotFoundError
 from app.inventory.models import Item
 from app.inventory.schemas import ItemCreate, ItemResponse
 from app.repositories.item_repo import ItemRepository
@@ -61,7 +61,7 @@ class ItemService:
             logger.error(f"Unexpected error in service: {e}")
             raise ServiceError("Internal service error") from e
 
-    async def get_item(self, item_id: int) -> Item:
+    async def get_item(self, item_id: int) -> Item | None:
         """
         Получить предмет по его ID
 
@@ -72,9 +72,11 @@ class ItemService:
             if item_id <= 0:
                 raise ValidationError("Item ID must be positive")
 
+            await self.check_item_exists(item_id)
             item = await self.item_repository.find_one_or_none_by_id(item_id)
-
             return item
+        except NotFoundError:
+            raise
         except ValidationError:
             raise
         except DatabaseError as e:
@@ -83,3 +85,10 @@ class ItemService:
         except Exception as e:
             logger.error(f"Unexpected error in service: {e}")
             raise ServiceError("Internal service error") from e
+
+    async def check_item_exists(self, item_id: int) -> bool:
+        """Проверить, что предмет существует"""
+        item_is_exist = await self.item_repository.check_exists(item_id)
+        if item_is_exist:
+            return item_is_exist
+        raise NotFoundError(f"Item with ID {item_id} not found")
