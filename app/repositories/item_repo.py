@@ -1,46 +1,24 @@
-from fastapi import HTTPException, status
-from sqlalchemy.future import select
-from sqlalchemy.sql import exists
+from sqlalchemy import select, exists
+from sqlalchemy.exc import SQLAlchemyError
 
-from app.inventory.models import Item, Inventory
-from app.base import BaseDAO
 from app.database import get_session
+from app.exceptions import DatabaseError, RepositoryError
+from app.inventory.models import Item, Inventory
+from app.base import BaseDAO, logger
 
 
 class ItemRepository(BaseDAO):
     model = Item
 
-    @classmethod
-    async def add_item(cls, values):
-        async with get_session() as session:
-            async with session.begin():
-                query = select(exists().where(
-                    cls.model.name == values.get('name'))
-                )
-                obj = await session.exec(query)
-                obj = obj.one()
-                if obj[0]:
-                    raise HTTPException(
-                        detail='Already exists',
-                        status_code=status.HTTP_409_CONFLICT
-                    )
-                new_instance = cls.model(**values)
-                session.add(new_instance)
-                return new_instance
-
-    @classmethod
-    async def get_item_by_id(
-            cls,
-            item_id: int
-    ):
-        async with get_session() as session:
-            async with session.begin():
-                inv_obj = await session.get(Item, item_id)
-                if not inv_obj:
-                    raise HTTPException(
-                        status_code=status.HTTP_404_NOT_FOUND,
-                        detail=(
-                            f'Не существует предмета {item_id}'
-                        )
-                    )
-                return inv_obj
+    async def check_exists(self, item_id: int) -> bool:
+        try:
+            async with get_session() as session:
+                query = select(exists().where(self.model.id == item_id))
+                result = await session.execute(query)
+                return result.scalar()
+        except SQLAlchemyError as e:
+                logger.error(f"Database error for item_id {item_id}: {e}")
+                raise DatabaseError(f"Failed to fetch item {item_id}") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in repository: {e}")
+            raise RepositoryError("Repository operation failed") from e

@@ -2,13 +2,12 @@ import logging
 import os
 
 from logging.handlers import RotatingFileHandler
-from fastapi import HTTPException, status
 
 from app.config import settings
+from app.exceptions import DatabaseError, ServiceError, ValidationError, NotFoundError
 from app.inventory.models import Item
-from app.inventory.schemas import ItemCreate, UserInfo
+from app.inventory.schemas import ItemCreate, ItemResponse
 from app.repositories.item_repo import ItemRepository
-
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,30 +29,66 @@ class ItemService:
     """
     item_repository = ItemRepository()
 
-    async def add_item(self, item: ItemCreate, user: UserInfo) -> Item:
+    async def create_item(self, item: ItemCreate) -> Item:
         """
-        Создать новый предмет
+        Создать новый предмет. Доступен только администратору
+
         :param item: данные нового предмета (ItemCreate)
         :return: созданный предмет (Item)
         """
-        if user.role != 'admin':
-            raise HTTPException(
-                detail='Недостаточно прав',
-                status_code=status.HTTP_403_FORBIDDEN
-            )
-        return await self.item_repository.add_item(item.model_dump())
+        try:
+            return await self.item_repository.add(item.model_dump())
+        except DatabaseError as e:
+            logger.error(f"Database error in service: {e}")
+            raise ServiceError("Service temporarily unavailable") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in service: {e}")
+            raise ServiceError("Internal service error") from e
 
-    async def get_all_items(self) -> list[Item]:
+    async def get_all_items(self) -> list[ItemResponse]:
         """
         Получить список всех предметов
-        :return: список предметов (list[Item])
-        """
-        return await self.item_repository.find_all()
 
-    async def get_item(self, item_id: int) -> Item:
+        :return: список предметов (list[ItemResponse])
+        """
+        try:
+            items = await self.item_repository.find_all()
+            return items
+        except DatabaseError as e:
+            logger.error(f"Database error in service: {e}")
+            raise ServiceError("Service temporarily unavailable") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in service: {e}")
+            raise ServiceError("Internal service error") from e
+
+    async def get_item(self, item_id: int) -> Item | None:
         """
         Получить предмет по его ID
+
         :param item_id: идентификатор предмета
         :return: предмет (Item) или None, если не найден
         """
-        return await self.item_repository.get_item_by_id(item_id)
+        try:
+            if item_id <= 0:
+                raise ValidationError("Item ID must be positive")
+
+            await self.check_item_exists(item_id)
+            item = await self.item_repository.find_one_or_none_by_id(item_id)
+            return item
+        except NotFoundError:
+            raise
+        except ValidationError:
+            raise
+        except DatabaseError as e:
+            logger.error(f"Database error in service: {e}")
+            raise ServiceError("Service temporarily unavailable") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in service: {e}")
+            raise ServiceError("Internal service error") from e
+
+    async def check_item_exists(self, item_id: int) -> bool:
+        """Проверить, что предмет существует"""
+        item_is_exist = await self.item_repository.check_exists(item_id)
+        if item_is_exist:
+            return item_is_exist
+        raise NotFoundError(f"Item with ID {item_id} not found")

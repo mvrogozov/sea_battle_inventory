@@ -1,10 +1,12 @@
-from sqlalchemy.dialects.postgresql import ENUM as PG_ENUM
+from typing import Optional
+
 from sqlmodel import Field, SQLModel, Relationship
 
 from app.inventory.schemas import ItemKind
 
 
 class InventoryItem(SQLModel, table=True):
+    """Связь инвентарей и предметов"""
     item_id: int = Field(
         foreign_key='item.id',
         primary_key=True,
@@ -16,38 +18,25 @@ class InventoryItem(SQLModel, table=True):
         ondelete='CASCADE'
     )
     amount: int = Field(default=0, ge=0)
-
-
-class InventoryCreate(SQLModel):
-    # user_id: int = Field(unique=True, index=True)
-    linked_items: list['Item'] = Relationship(
-        back_populates='inventories',
-        link_model=InventoryItem,
-    )
+    inventory: Optional["Inventory"] = Relationship(back_populates="inventory_items")
+    item: Optional["Item"] = Relationship(back_populates="inventory_items")
 
 
 class Item(SQLModel, table=True):
-    id: int | None = Field(default=None, primary_key=True, index=True)
+    """Модель предмета"""
+    id: Optional[int] = Field(default=None, primary_key=True, index=True)
     name: str = Field(unique=True, index=True)
     description: str | None = Field(default=None)
-    script: str | None = Field(default=None)
-    kind: ItemKind = Field(
-        default=ItemKind.CONSUMABLE,
-        sa_type=PG_ENUM(ItemKind, name='item_kind')
-    )
-    inventories: list['Inventory'] = Relationship(
-        back_populates='linked_items',
-        link_model=InventoryItem,
-    )
+    script: Optional[str] = Field(default=None, description="Мета-язык/скрипт для ядра")
+    kind: ItemKind = Field(default=ItemKind.CONSUMABLE)
+    inventory_items: list["InventoryItem"] = Relationship(back_populates="item")
 
     class Config:
         use_enum_values = True
 
 
 class Inventory(SQLModel, table=True):
+    """Модель инвентаря пользователя"""
     id: int | None = Field(default=None, primary_key=True, index=True)
     user_id: int = Field(unique=True, index=True)
-    linked_items: list['Item'] = Relationship(
-        back_populates='inventories',
-        link_model=InventoryItem,
-    )
+    inventory_items: list["InventoryItem"] = Relationship(back_populates="inventory")

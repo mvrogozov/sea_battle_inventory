@@ -1,19 +1,27 @@
 from enum import Enum
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlmodel import SQLModel
 
 
-class ConsumeRequest(BaseModel):
-    item_id: int
-    quantity: int
-    battle_id: str
-    user_id: int
+class SuccessResponse(BaseModel):
+    success: bool = True
+    detail: str
 
 
 class ItemKind(str, Enum):
     CONSUMABLE = 'расходник'
     CURRENCY = 'валюта'
+
+
+class BaseItem(BaseModel):
+    name: str
+    kind: ItemKind
+    description: str
+
+
+class ItemResponse(BaseItem):
+    id: int
 
 
 class ItemCreate(SQLModel):
@@ -24,14 +32,10 @@ class ItemCreate(SQLModel):
 
 
 class ItemToInventory(BaseModel):
-    item_id: int
-    amount: int
-
-
-class ItemToInventoryByUserId(BaseModel):
-    item_id: int
-    amount: int
-    user_id: int
+    """Модель добавления предмета в инвентарь игрока"""
+    user_id: int = Field(description="ID игрока, в чей инвентарь добавляется предмет")
+    item_id: int = Field(description="ID предмета для добавления в инвентарь")
+    amount: int = Field(gt=0, description="Количество добавляемых предметов")
 
 
 class InventoryItemResponse(SQLModel):
@@ -48,3 +52,9 @@ class InventoryResponse(SQLModel):
 class UserInfo(SQLModel):
     user_id: int
     role: str
+
+class UseItem(BaseModel):
+    """Модель использования предмета (списания предмета из инвентаря)"""
+    item_id: int = Field(gt=0, description="ID использованного предмета")
+    user_id: int = Field(gt=0, description="ID пользователя, использовавшего предмет")
+    amount: int = Field(gt=0, default=1, description="Количество элементов на использование")
