@@ -12,7 +12,14 @@ from app.config import settings
 from app.api.items import router as item_router
 from app.database import init_db
 from app.api.inventory import router as inventory_router
-from app.exceptions import ValidationError, BusinessError, ServiceError
+from app.exceptions import (
+    ValidationError,
+    BusinessError,
+    ServiceError,
+    InventoryAlreadyExistsError,
+    NotFoundError,
+    NotAdminError,
+)
 
 # Logging setup
 logger = logging.getLogger(__name__)
@@ -61,6 +68,21 @@ async def business_handler(request: Request, exc: BusinessError):
 async def service_handler(request: Request, exc: ServiceError):
     logger.error(f"Service error: {exc}")
     return JSONResponse(status_code=status.HTTP_503_SERVICE_UNAVAILABLE, content={"detail": "Service unavailable"})
+
+
+@app.exception_handler(InventoryAlreadyExistsError)
+async def inventory_already_exists_handler(request: Request, exc: InventoryAlreadyExistsError):
+    return JSONResponse(status_code=status.HTTP_409_CONFLICT, content={"detail": str(exc)})
+
+
+@app.exception_handler(NotFoundError)
+async def not_found_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={"detail": str(exc)})
+
+
+@app.exception_handler(NotAdminError)
+async def user_not_admin_handler(request: Request, exc: NotAdminError):
+    return JSONResponse(status_code=status.HTTP_403_FORBIDDEN, content={"detail": str(exc)})
 
 
 @app.exception_handler(Exception)
