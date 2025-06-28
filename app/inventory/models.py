@@ -7,11 +7,13 @@ from app.inventory.schemas import ItemKind
 class InventoryItem(SQLModel, table=True):
     item_id: int = Field(
         foreign_key='item.id',
-        primary_key=True
+        primary_key=True,
+        ondelete='CASCADE'
     )
     inventory_id: int = Field(
         foreign_key='inventory.id',
-        primary_key=True
+        primary_key=True,
+        ondelete='CASCADE'
     )
     amount: int = Field(default=0, ge=0)
 

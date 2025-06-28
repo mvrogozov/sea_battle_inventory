@@ -26,7 +26,7 @@ handler.setFormatter(formatter)
 
 
 async def get_current_user(
-        authorization: Annotated[str | None, Header()] = None
+    authorization: Annotated[str | None, Header()] = None
 ) -> UserInfo:
     if not authorization or not authorization.startswith('Bearer '):
         raise HTTPException(

@@ -28,6 +28,12 @@ class ItemToInventory(BaseModel):
     amount: int
 
 
+class ItemToInventoryByUserId(BaseModel):
+    item_id: int
+    amount: int
+    user_id: int
+
+
 class InventoryItemResponse(SQLModel):
     item_id: int
     name: str
