@@ -2,10 +2,11 @@ import logging
 import os
 
 from logging.handlers import RotatingFileHandler
+from fastapi import HTTPException, status
 
 from app.config import settings
 from app.inventory.models import Item
-from app.inventory.schemas import ItemCreate
+from app.inventory.schemas import ItemCreate, UserInfo
 from app.repositories.item_repo import ItemRepository
 
 
@@ -29,13 +30,18 @@ class ItemService:
     """
     item_repository = ItemRepository()
 
-    async def add_item(self, item: ItemCreate) -> Item:
+    async def add_item(self, item: ItemCreate, user: UserInfo) -> Item:
         """
         Создать новый предмет
         :param item: данные нового предмета (ItemCreate)
         :return: созданный предмет (Item)
         """
-        return await self.item_repository.add(item.model_dump())
+        if user.role != 'admin':
+            raise HTTPException(
+                detail='Недостаточно прав',
+                status_code=status.HTTP_403_FORBIDDEN
+            )
+        return await self.item_repository.add_item(item.model_dump())
 
     async def get_all_items(self) -> list[Item]:
         """
@@ -50,4 +56,4 @@ class ItemService:
         :param item_id: идентификатор предмета
         :return: предмет (Item) или None, если не найден
         """
-        return await self.item_repository.find_one_or_none_by_id(item_id)
+        return await self.item_repository.get_item_by_id(item_id)
