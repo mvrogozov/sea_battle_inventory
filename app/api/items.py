@@ -5,8 +5,9 @@ from fastapi import APIRouter, Path
 from fastapi.params import Depends
 
 from app.api.responses import NOT_FOUND_RESPONSE, SERVICE_ERROR, UNEXPECTED_ERROR
-from app.inventory.schemas import ItemCreate, ItemResponse
+from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.services.item_service import ItemService
+from app.inventory.common import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -38,8 +39,9 @@ async def get_items(
 async def create_item(
         item: ItemCreate,
         item_service: Annotated[ItemService, Depends()],
+        user: Annotated[UserInfo, Depends(get_current_user)]
 ):
-    return await item_service.create_item(item)
+    return await item_service.create_item(item, user)
 
 
 @router.get(

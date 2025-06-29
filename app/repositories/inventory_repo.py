@@ -1,22 +1,26 @@
 from fastapi import HTTPException, status
 from sqlalchemy.future import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.sql import exists
 
 from app.database import get_session
+from app.exceptions import DatabaseError, RepositoryError, InventoryAlreadyExistsError
 from app.inventory.models import (
     Inventory, Item, InventoryItem,
 )
 from app.base import BaseDAO
 from app.inventory.common import logger
-from app.inventory.schemas import InventoryItemResponse, InventoryResponse
+from app.inventory.schemas import (
+    InventoryItemResponse, InventoryResponse, UserInfo
+)
 
 
 class InventoryRepository(BaseDAO):
     model = Inventory
 
     @classmethod
-    async def add_for_current_user(cls, values):
-        user_id = values.get('user_id')
+    async def add_for_current_user(cls, user: UserInfo):
+        user_id = user.user_id
         async with get_session() as session:
             async with session.begin():
                 query = select(exists().where(cls.model.user_id == user_id))
@@ -27,7 +31,7 @@ class InventoryRepository(BaseDAO):
                         detail='Already exists',
                         status_code=status.HTTP_409_CONFLICT
                     )
-                new_instance = cls.model(**values)
+                new_instance = cls.model(user_id=user_id)
                 session.add(new_instance)
                 return new_instance
 
@@ -162,3 +166,17 @@ class InventoryRepository(BaseDAO):
                     user_id=inv_obj.user_id,
                     items=items
                 )
+
+    @classmethod
+    async def check_exists(cls, user_id: int) -> bool:
+        try:
+            async with get_session() as session:
+                query = select(exists().where(cls.model.user_id == user_id))
+                result = await session.exec(query)
+                return result.scalar()
+        except SQLAlchemyError as e:
+            logger.error(f"Database error for user_id {user_id}: {e}")
+            raise DatabaseError(f"Failed to fetch inventory fot user - {user_id}") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in repository: {e}")
+            raise RepositoryError("Repository operation failed") from e

@@ -4,9 +4,12 @@ import os
 from logging.handlers import RotatingFileHandler
 
 from app.config import settings
-from app.exceptions import DatabaseError, ServiceError, ValidationError, NotFoundError
+from app.exceptions import (
+    DatabaseError, ServiceError, ValidationError, NotFoundError,
+    NotAdminError
+)
 from app.inventory.models import Item
-from app.inventory.schemas import ItemCreate, ItemResponse
+from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.repositories.item_repo import ItemRepository
 
 logging.basicConfig(
@@ -29,13 +32,14 @@ class ItemService:
     """
     item_repository = ItemRepository()
 
-    async def create_item(self, item: ItemCreate) -> Item:
+    async def create_item(self, item: ItemCreate, user: UserInfo) -> Item:
         """
         Создать новый предмет. Доступен только администратору
 
         :param item: данные нового предмета (ItemCreate)
         :return: созданный предмет (Item)
         """
+        await self.check_user_is_admin(user)
         try:
             return await self.item_repository.add(item.model_dump())
         except DatabaseError as e:
@@ -92,3 +96,13 @@ class ItemService:
         if item_is_exist:
             return item_is_exist
         raise NotFoundError(f"Item with ID {item_id} not found")
+
+    @staticmethod
+    async def check_user_is_admin(user: UserInfo) -> None:
+        """
+        Проверка, что пользователь — администратор
+        :param user: информация о пользователе
+        :raises NotAdminError: если пользователь не админ
+        """
+        if user.role != 'admin':
+            raise NotAdminError("Only admin allowed")

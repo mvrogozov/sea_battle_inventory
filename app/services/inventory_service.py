@@ -21,6 +21,7 @@ handler = RotatingFileHandler(
 )
 logger.addHandler(handler)
 
+
 class InventoryService:
     """
     Сервис для работы с инвентарями пользователей.
@@ -37,9 +38,17 @@ class InventoryService:
         :param user: информация о пользователе
         :return: созданный инвентарь
         """
-        if not await self.check_inventory_exists(user.user_id):
+        is_inventory_exist = await (
+            self.inventory_repository.check_exists(user.user_id)
+        )
+        logger.debug(f'iser >> {is_inventory_exist}')
+        if not is_inventory_exist:
             try:
-                new_inventory = await self.inventory_repository.add_for_current_user(user.user_id)
+                new_inventory = await (
+                    self.inventory_repository.add_for_current_user(
+                        user
+                    )
+                )
                 return new_inventory
             except InventoryAlreadyExistsError:
                 # Инвентарь уже существует — пробрасываем исключение
@@ -66,20 +75,24 @@ class InventoryService:
         await self.check_user_is_admin(user)
         try:
             await self.item_service.get_item(item_to_inventory.item_id)
-            if await self.check_inventory_exists(item_to_inventory.user_id):
+            is_inventory_exist = await self.inventory_repository.check_exists(
+                item_to_inventory.user_id
+            )
+
+            if is_inventory_exist:
                 fields = item_to_inventory.model_dump()
                 return await self.inventory_repository.add_item(**fields)
         except NotFoundError:
             raise
 
-    async def get_user_inventory(self, user_id: int):
+    async def get_user_inventory(self, user: UserInfo):
         """
         Получить инвентарь пользователя по user_id
         :param user_id: идентификатор пользователя
         :return: инвентарь пользователя
         """
-        await self.check_inventory_exists(user_id)
-        return await self.inventory_repository.get_user_inventory(user_id)
+        await self.check_inventory_exists(user.user_id)
+        return await self.inventory_repository.get_user_inventory(user.user_id)
 
     async def use_item_from_inventory(self, use_item: UseItem):
         """
@@ -106,7 +119,10 @@ class InventoryService:
         :param user_id: идентификатор пользователя
         :return: True, если инвентарь есть, иначе выбрасывает NotFoundError
         """
-        is_inventory_exist = await self.inventory_repository.check_exists(user_id)
+        is_inventory_exist = await self.inventory_repository.check_exists(
+            user_id
+        )
+        logger.debug(f'>>>125 {is_inventory_exist}')
         if is_inventory_exist:
             return is_inventory_exist
         raise NotFoundError(f"Inventory for user with ID {user_id} not found")

@@ -42,16 +42,17 @@ async def get_current_user(
     authorization: HTTPAuthorizationCredentials = Depends(security_scheme)
 ) -> UserInfo:
     token = authorization.credentials
-    if not authorization or not authorization.startswith('Bearer '):
-        raise HTTPException(
-            detail='Needs Bearer token',
-            status_code=status.HTTP_401_UNAUTHORIZED
-        )
-    logger.debug('common 39 >> {token}')
+    # if not authorization or not authorization.startswith('Bearer '):
+    #     raise HTTPException(
+    #         detail='Needs Bearer token',
+    #         status_code=status.HTTP_401_UNAUTHORIZED
+    #     )
+    logger.debug(f'common 39 >> {token}')
     try:
         decoded = jwt.decode(token, options={'verify_signature': False})
         user_id = decoded.get('user_id')
         role = decoded.get('role')
+        logger.debug(f'common 55 >> {user_id} {role}')
         if not user_id or not role:
             raise HTTPException(
                 detail='Token must contains user_id and role',

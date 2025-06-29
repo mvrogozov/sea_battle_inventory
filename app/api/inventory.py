@@ -73,4 +73,4 @@ async def get_user_inventory(
 
     - **returns**: Инвентарь пользователя
     """
-    return await inventory_service.get_user_inventory(user.user_id)
+    return await inventory_service.get_user_inventory(user)
