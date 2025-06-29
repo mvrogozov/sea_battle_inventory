@@ -26,10 +26,11 @@ router = APIRouter(
 )
 async def create_inventory(
         inventory_service: Annotated[InventoryService, Depends()],
-        # user: Annotated[UserInfo, Depends(get_current_user)]
+        user: Annotated[UserInfo, Depends(get_current_user)]
 ):
-    await inventory_service.create_inventory(UserInfo.model_validate({"user_id": 2, "role": "user"}))
+    await inventory_service.create_inventory(user)
     return SuccessResponse(detail="Inventory created")
+
 
 @router.post(
     '/add_item',
@@ -46,6 +47,7 @@ async def add_to_inventory(
 ):
     await inventory_service.add_to_inventory(item_to_inventory, user)
     return SuccessResponse(detail="Item added")
+
 
 @router.patch(
     '/use_item',

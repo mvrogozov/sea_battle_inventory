@@ -4,6 +4,7 @@ import os
 from logging.handlers import RotatingFileHandler
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi.security import OAuth2PasswordBearer, HTTPBearer
 from contextlib import asynccontextmanager
 
 from sqlalchemy.exc import SQLAlchemyError
@@ -52,6 +53,23 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+
+# Добавляем схему безопасности в OpenAPI
+# app.openapi_schema = {
+#     "openapi": "3.0.0",
+#     "info": {"title": "FastAPI", "version": "0.1.0"},
+#     "components": {
+#         "securitySchemes": {
+#             "JWT Auth": {
+#                 "type": "http",
+#                 "scheme": "bearer",
+#                 "bearerFormat": "JWT",
+#                 "description": "Введите ваш JWT токен в формате: Bearer <token>"
+#             }
+#         }
+#     },
+#     "security": [{"JWT Auth": []}]
+# }
 
 
 @app.exception_handler(ValidationError)

@@ -1,18 +1,18 @@
-"""init
+"""inventory
 
-Revision ID: e5a4bc901b60
+Revision ID: a0f50194f57e
 Revises: 
-Create Date: 2025-06-25 13:12:12.973481
+Create Date: 2025-06-29 15:38:12.336434
 
 """
 from typing import Sequence, Union
 import sqlmodel 
 from alembic import op
 import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
+
 
 # revision identifiers, used by Alembic.
-revision: str = 'e5a4bc901b60'
+revision: str = 'a0f50194f57e'
 down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
@@ -33,7 +33,7 @@ def upgrade() -> None:
     sa.Column('name', sqlmodel.sql.sqltypes.AutoString(), nullable=False),
     sa.Column('description', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
     sa.Column('script', sqlmodel.sql.sqltypes.AutoString(), nullable=True),
-    sa.Column('kind', postgresql.ENUM('CONSUMABLE', 'CURRENCY', name='item_kind', create_type=False), nullable=False),
+    sa.Column('kind', sa.Enum('CONSUMABLE', 'CURRENCY', name='itemkind'), nullable=False),
     sa.PrimaryKeyConstraint('id')
     )
     op.create_index(op.f('ix_item_id'), 'item', ['id'], unique=False)
@@ -42,8 +42,8 @@ def upgrade() -> None:
     sa.Column('item_id', sa.Integer(), nullable=False),
     sa.Column('inventory_id', sa.Integer(), nullable=False),
     sa.Column('amount', sa.Integer(), nullable=False),
-    sa.ForeignKeyConstraint(['inventory_id'], ['inventory.id'], ),
-    sa.ForeignKeyConstraint(['item_id'], ['item.id'], ),
+    sa.ForeignKeyConstraint(['inventory_id'], ['inventory.id'], ondelete='CASCADE'),
+    sa.ForeignKeyConstraint(['item_id'], ['item.id'], ondelete='CASCADE'),
     sa.PrimaryKeyConstraint('item_id', 'inventory_id')
     )
     # ### end Alembic commands ###
