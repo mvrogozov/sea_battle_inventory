@@ -1,8 +1,9 @@
 import logging
 
+from sqlalchemy import exists
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.future import select
-from sqlalchemy import exists
+
 from app.database import get_session
 from app.exceptions import DatabaseError, RepositoryError
 
@@ -20,8 +21,8 @@ class BaseDAO:
                 result = await session.exec(query)
                 return result.scalar_one_or_none()
         except SQLAlchemyError as e:
-                logger.error(f"Database error for item_id {data_id}: {e}")
-                raise DatabaseError(f"Failed to fetch item {data_id}") from e
+            logger.error(f"Database error for item_id {data_id}: {e}")
+            raise DatabaseError(f"Failed to fetch item {data_id}") from e
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e
@@ -34,8 +35,8 @@ class BaseDAO:
                 result = await session.exec(query)
                 return result.scalar_one_or_none()
         except SQLAlchemyError as e:
-                logger.error(f"Database error: {e}")
-                raise DatabaseError(f"Failed to fetch find item") from e
+            logger.error(f"Database error: {e}")
+            raise DatabaseError("Failed to fetch find item") from e
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e
@@ -48,8 +49,8 @@ class BaseDAO:
                 result = await session.exec(query)
                 return result.scalars().all()
         except SQLAlchemyError as e:
-                logger.error(f"Database error: {e}")
-                raise DatabaseError(f"Failed to fetch find all items") from e
+            logger.error(f"Database error: {e}")
+            raise DatabaseError("Failed to fetch find all items") from e
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e
@@ -63,8 +64,8 @@ class BaseDAO:
                     session.add(new_instance)
                     return new_instance
         except SQLAlchemyError as e:
-                logger.error(f"Database error: {e}")
-                raise DatabaseError(f"Failed to add new item") from e
+            logger.error(f"Database error: {e}")
+            raise DatabaseError("Failed to add new item") from e
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e
@@ -77,8 +78,8 @@ class BaseDAO:
                 result = await session.exec(query)
                 return result.scalar()
         except SQLAlchemyError as e:
-                logger.error(f"Database error for item_id {item_id}: {e}")
-                raise DatabaseError(f"Failed to fetch item {item_id}") from e
+            logger.error(f"Database error for item_id {item_id}: {e}")
+            raise DatabaseError(f"Failed to fetch item {item_id}") from e
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e

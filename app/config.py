@@ -1,17 +1,18 @@
 import os
 
+from pydantic import Field, PostgresDsn
 from pydantic_settings import BaseSettings
-from pydantic import PostgresDsn, Field
 
 
 class Settings(BaseSettings):
 
     LOG_PATH: str = 'app/logs'
-    db_host: str = Field(alias="DB_HOST")
-    db_user: str = Field(alias="POSTGRES_USER")
-    db_password: str = Field(alias="POSTGRES_PASSWORD")
-    db_name: str = Field(alias="POSTGRES_DB")
-    db_port: int = Field(alias="DB_PORT", default=5432)
+    db_host: str = Field(alias='DB_HOST')
+    db_user: str = Field(alias='POSTGRES_USER')
+    db_password: str = Field(alias='POSTGRES_PASSWORD')
+    db_name: str = Field(alias='POSTGRES_DB')
+    db_port: int = Field(alias='DB_PORT', default=5432)
+    KAFKA_SERVER: str = Field(alias='KAFKA_SERVER')
 
     @property
     def db_url(self) -> PostgresDsn:

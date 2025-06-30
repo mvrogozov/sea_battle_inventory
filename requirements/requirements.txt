@@ -14,6 +14,8 @@ asyncpg==0.30.0
     # via -r requirements/requirements.in
 click==8.2.1
     # via uvicorn
+confluent-kafka==2.10.1
+    # via -r requirements/requirements.in
 fastapi==0.115.13
     # via -r requirements/requirements.in
 greenlet==3.2.3

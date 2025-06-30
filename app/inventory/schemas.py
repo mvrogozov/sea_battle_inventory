@@ -33,7 +33,9 @@ class ItemCreate(SQLModel):
 
 class ItemToInventory(BaseModel):
     """Модель добавления предмета в инвентарь игрока"""
-    user_id: int = Field(description="ID игрока, в чей инвентарь добавляется предмет")
+    user_id: int = Field(
+        description="ID игрока, в чей инвентарь добавляется предмет"
+    )
     item_id: int = Field(description="ID предмета для добавления в инвентарь")
     amount: int = Field(gt=0, description="Количество добавляемых предметов")
 
@@ -53,8 +55,13 @@ class UserInfo(SQLModel):
     user_id: int
     role: str
 
+
 class UseItem(BaseModel):
     """Модель использования предмета (списания предмета из инвентаря)"""
     item_id: int = Field(gt=0, description="ID использованного предмета")
-    user_id: int = Field(gt=0, description="ID пользователя, использовавшего предмет")
-    amount: int = Field(gt=0, default=1, description="Количество элементов на использование")
+    user_id: int = Field(
+        gt=0, description="ID пользователя, использовавшего предмет"
+    )
+    amount: int = Field(
+        gt=0, default=1, description="Количество элементов на использование"
+    )

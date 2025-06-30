@@ -12,7 +12,7 @@ NOT_FOUND_RESPONSE = {
 }
 
 ALREADY_EXISTS = {
-status.HTTP_409_CONFLICT: {
+    status.HTTP_409_CONFLICT: {
         "description": "Запись уже существует",
         "content": {
             "application/json": {
@@ -22,7 +22,7 @@ status.HTTP_409_CONFLICT: {
     }
 }
 
-SERVICE_ERROR= {
+SERVICE_ERROR = {
     status.HTTP_503_SERVICE_UNAVAILABLE: {
         "description": "Ошибка в процессе работы сервиса",
         "content": {

@@ -6,3 +6,4 @@ alembic
 asyncpg
 gunicorn
 PyJWT
+confluent_kafka
