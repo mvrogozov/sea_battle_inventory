@@ -2,11 +2,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, status
 
-from app.api.responses import SERVICE_ERROR, UNEXPECTED_ERROR, ALREADY_EXISTS, NOT_FOUND_RESPONSE
-from app.inventory.schemas import (
-    InventoryResponse, ItemToInventory, UserInfo, SuccessResponse, UseItem
-)
+from app.api.responses import (ALREADY_EXISTS, NOT_FOUND_RESPONSE,
+                               SERVICE_ERROR, UNEXPECTED_ERROR)
 from app.inventory.common import get_current_user
+from app.inventory.schemas import (InventoryResponse, ItemToInventory,
+                                   SuccessResponse, UseItem, UserInfo)
 from app.services.inventory_service import InventoryService
 
 router = APIRouter(
@@ -22,7 +22,10 @@ router = APIRouter(
     status_code=status.HTTP_201_CREATED,
     responses=ALREADY_EXISTS,
     summary="Создать инвентарь пользователя",
-    description="Возвращает сообщение с полем {'detail': 'Inventory created'} при успешном создании инвентаря",
+    description=(
+        "Возвращает сообщение с полем {'detail': 'Inventory created'}"
+        " при успешном создании инвентаря"
+    ),
 )
 async def create_inventory(
         inventory_service: Annotated[InventoryService, Depends()],
@@ -36,7 +39,10 @@ async def create_inventory(
     '/add_item',
     response_model=SuccessResponse,
     responses=NOT_FOUND_RESPONSE,
-    summary="Добавить предмет в инвентарь пользователя. Доступно только администраторам",
+    summary=(
+        "Добавить предмет в инвентарь пользователя. "
+        "Доступно только администраторам"
+    ),
     description="Поля для добавления",
     tags=["admin"]
 )

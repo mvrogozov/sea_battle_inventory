@@ -1,6 +1,6 @@
 from typing import Optional
 
-from sqlmodel import Field, SQLModel, Relationship
+from sqlmodel import Field, Relationship, SQLModel
 
 from app.inventory.schemas import ItemKind
 
@@ -18,7 +18,9 @@ class InventoryItem(SQLModel, table=True):
         ondelete='CASCADE'
     )
     amount: int = Field(default=0, ge=0)
-    inventory: Optional["Inventory"] = Relationship(back_populates="inventory_items")
+    inventory: Optional["Inventory"] = Relationship(
+        back_populates="inventory_items"
+    )
     item: Optional["Item"] = Relationship(back_populates="inventory_items")
 
 
@@ -27,9 +29,14 @@ class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     name: str = Field(unique=True, index=True)
     description: str | None = Field(default=None)
-    script: Optional[str] = Field(default=None, description="Мета-язык/скрипт для ядра")
+    script: Optional[str] = Field(
+        default=None,
+        description="Мета-язык/скрипт для ядра"
+    )
     kind: ItemKind = Field(default=ItemKind.CONSUMABLE)
-    inventory_items: list["InventoryItem"] = Relationship(back_populates="item")
+    inventory_items: list["InventoryItem"] = Relationship(
+        back_populates="item"
+    )
 
     class Config:
         use_enum_values = True
@@ -39,4 +46,6 @@ class Inventory(SQLModel, table=True):
     """Модель инвентаря пользователя"""
     id: int | None = Field(default=None, primary_key=True, index=True)
     user_id: int = Field(unique=True, index=True)
-    inventory_items: list["InventoryItem"] = Relationship(back_populates="inventory")
+    inventory_items: list["InventoryItem"] = Relationship(
+        back_populates="inventory"
+    )

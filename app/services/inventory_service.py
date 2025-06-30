@@ -1,11 +1,13 @@
 import logging
-from logging.handlers import RotatingFileHandler
 import os
+from logging.handlers import RotatingFileHandler
 
 from app.config import settings
-from app.exceptions import DatabaseError, ServiceError, InventoryAlreadyExistsError, NotFoundError, NotAdminError
+from app.exceptions import (DatabaseError, InventoryAlreadyExistsError,
+                            NotAdminError, NotFoundError, ServiceError)
 from app.inventory.models import Inventory
-from app.inventory.schemas import ItemToInventory, UserInfo, UseItem, SuccessResponse
+from app.inventory.schemas import (ItemToInventory, SuccessResponse, UseItem,
+                                   UserInfo)
 from app.repositories.inventory_repo import InventoryRepository
 from app.services.item_service import ItemService
 
@@ -41,7 +43,6 @@ class InventoryService:
         is_inventory_exist = await (
             self.inventory_repository.check_exists(user.user_id)
         )
-        logger.debug(f'iser >> {is_inventory_exist}')
         if not is_inventory_exist:
             try:
                 new_inventory = await (
@@ -59,7 +60,9 @@ class InventoryService:
             except Exception as e:
                 logger.error(f"Unexpected error in service: {e}")
                 raise ServiceError("Internal service error") from e
-        raise InventoryAlreadyExistsError("Inventory for this user already exists")
+        raise InventoryAlreadyExistsError(
+            "Inventory for this user already exists"
+        )
 
     async def add_to_inventory(
         self,
@@ -97,7 +100,8 @@ class InventoryService:
     async def use_item_from_inventory(self, use_item: UseItem):
         """
         Использование и списание предмета из инвентаря пользователя
-        Проверяет наличие инвентаря и предмета, уменьшает количество или удаляет предмет
+        Проверяет наличие инвентаря и предмета, уменьшает количество
+        или удаляет предмет
         :param use_item: данные о списываемом предмете
         :return: SuccessResponse при успехе
         """
@@ -106,12 +110,18 @@ class InventoryService:
         user_inventory = await self.get_user_inventory(use_item.user_id)
 
         # Проверяем, есть ли нужный предмет в инвентаре пользователя
-        if any(item.item_id == use_item.item_id for item in user_inventory.items):
+        if any(
+            item.item_id == use_item.item_id for item in user_inventory.items
+        ):
             await self.inventory_repository.use_item_from_inventory(use_item)
-            return SuccessResponse(detail=f"Item {use_item.item_id} used success")
+            return SuccessResponse(
+                detail=f"Item {use_item.item_id} used success"
+            )
 
         # Если предмета нет — выбрасываем NotFoundError
-        raise NotFoundError(f"User with ID {use_item.user_id} not have item {use_item.item_id}")
+        raise NotFoundError(
+            f"User with ID {use_item.user_id} not have item {use_item.item_id}"
+        )
 
     async def check_inventory_exists(self, user_id: int) -> bool:
         """

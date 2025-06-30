@@ -4,10 +4,11 @@ from typing import Annotated
 from fastapi import APIRouter, Path
 from fastapi.params import Depends
 
-from app.api.responses import NOT_FOUND_RESPONSE, SERVICE_ERROR, UNEXPECTED_ERROR
+from app.api.responses import (NOT_FOUND_RESPONSE, SERVICE_ERROR,
+                               UNEXPECTED_ERROR)
+from app.inventory.common import get_current_user
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.services.item_service import ItemService
-from app.inventory.common import get_current_user
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,9 @@ async def create_item(
 )
 async def get_item_by_id(
         item_service: Annotated[ItemService, Depends()],
-        item_id: int = Path(..., gt=0, description="ID предмета (должен быть больше 0)"),
+        item_id: int = Path(
+            ..., gt=0, description="ID предмета (должен быть больше 0)"
+        ),
 ):
     item = await item_service.get_item(item_id)
     return item
