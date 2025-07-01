@@ -18,7 +18,7 @@ class BaseItem(BaseModel):
     name: str
     kind: ItemKind
     description: str
-    script: str
+    script: str = None
 
 
 class ItemResponse(BaseItem):
