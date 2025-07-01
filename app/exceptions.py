@@ -37,11 +37,11 @@ class NotAdminError(BaseAppException):
     """ошибка если пользователь не администратор"""
 
 
-class InventoryAlreadyExistsError(Exception):
+class InventoryAlreadyExistsError(BaseAppException):
     """Ошибка если инвентарь для пользователя уже существует"""
     pass
 
 
-class ItemAlreadyExistsError(Exception):
+class ItemAlreadyExistsError(BaseAppException):
     """Ошибка если предмет уже существует"""
     pass
