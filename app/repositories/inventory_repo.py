@@ -189,7 +189,10 @@ class InventoryRepository(BaseDAO):
                 query = (
                     select(InventoryItem)
                     .join(Inventory, InventoryItem.inventory_id == Inventory.id)
-                    .where(Inventory.user_id == use_item.user_id)
+                    .where(
+                        Inventory.user_id == use_item.user_id,
+                        InventoryItem.item_id == use_item.item_id
+                    )
                 )
                 result = await session.exec(query)
                 db_item = result.scalar_one_or_none()
