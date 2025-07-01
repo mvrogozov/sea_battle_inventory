@@ -107,7 +107,9 @@ class InventoryService:
         """
         await self.check_inventory_exists(use_item.user_id)
         await self.item_service.check_item_exists(use_item.item_id)
-        user_inventory = await self.get_user_inventory(use_item.user_id)
+        user_inventory = await self.get_user_inventory(
+            UserInfo(user_id=use_item.user_id, role='')
+        )
 
         # Проверяем, есть ли нужный предмет в инвентаре пользователя
         if any(

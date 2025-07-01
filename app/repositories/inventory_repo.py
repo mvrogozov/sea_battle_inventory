@@ -5,11 +5,13 @@ from sqlalchemy.sql import exists
 
 from app.base import BaseDAO
 from app.database import get_session
-from app.exceptions import DatabaseError, RepositoryError
+from app.exceptions import (
+    DatabaseError, RepositoryError, InventoryAlreadyExistsError
+)
 from app.inventory.common import logger
 from app.inventory.models import Inventory, InventoryItem, Item
 from app.inventory.schemas import (InventoryItemResponse, InventoryResponse,
-                                   UserInfo)
+                                   UserInfo, UseItem)
 
 
 class InventoryRepository(BaseDAO):
@@ -176,6 +178,30 @@ class InventoryRepository(BaseDAO):
             raise DatabaseError(
                 f"Failed to fetch inventory fot user - {user_id}"
             ) from e
+        except Exception as e:
+            logger.error(f"Unexpected error in repository: {e}")
+            raise RepositoryError("Repository operation failed") from e
+
+    @classmethod
+    async def use_item_from_inventory(cls, use_item: UseItem):
+        try:
+            async with get_session() as session:
+                query = (
+                    select(InventoryItem)
+                    .join(Inventory, InventoryItem.inventory_id == Inventory.id)
+                    .where(Inventory.user_id == use_item.user_id)
+                )
+                result = await session.exec(query)
+                db_item = result.scalar_one_or_none()
+                db_item.amount -= use_item.amount
+                if db_item.amount == 0:
+                    await session.delete(db_item)
+                await session.commit()
+        except SQLAlchemyError as e:
+            logger.error(f"Database error for create new inventory: {e}")
+            raise DatabaseError(f"Failed to create new  inventory") from e
+        except InventoryAlreadyExistsError:
+            raise
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e
