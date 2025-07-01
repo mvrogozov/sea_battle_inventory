@@ -18,6 +18,7 @@ class BaseItem(BaseModel):
     name: str
     kind: ItemKind
     description: str
+    script: str
 
 
 class ItemResponse(BaseItem):
