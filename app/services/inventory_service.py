@@ -7,7 +7,7 @@ from app.exceptions import (DatabaseError, InventoryAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError)
 from app.inventory.models import Inventory
 from app.inventory.schemas import (ItemToInventory, SuccessResponse, UseItem,
-                                   UserInfo)
+                                   UserInfo, InventoryResponse)
 from app.repositories.inventory_repo import InventoryRepository
 from app.services.item_service import ItemService
 
@@ -134,7 +134,6 @@ class InventoryService:
         is_inventory_exist = await self.inventory_repository.check_exists(
             user_id
         )
-        logger.debug(f'>>>125 {is_inventory_exist}')
         if is_inventory_exist:
             return is_inventory_exist
         raise NotFoundError(f"Inventory for user with ID {user_id} not found")
@@ -148,3 +147,12 @@ class InventoryService:
         """
         if user.role != 'admin':
             raise NotAdminError("Only admin allowed")
+
+    async def get_all_with_item(self, item_id: int) -> list[InventoryResponse]:
+        """
+        Получить список всех инвентарей с предметом
+        :return: список инвентарей
+        """
+        return await self.inventory_repository.get_inventories_with_item(
+            item_id
+        )

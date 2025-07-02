@@ -11,6 +11,13 @@ NOT_FOUND_RESPONSE = {
     }
 }
 
+DELETED_RESPONSE = {
+    status.HTTP_204_NO_CONTENT: {
+        "description": "Успешное удаление",
+        "content": None
+    }
+}
+
 ALREADY_EXISTS = {
     status.HTTP_409_CONFLICT: {
         "description": "Запись уже существует",

@@ -44,6 +44,7 @@ class ItemToInventory(BaseModel):
 class InventoryItemResponse(SQLModel):
     item_id: int
     name: str
+    script: str
     amount: int
 
 

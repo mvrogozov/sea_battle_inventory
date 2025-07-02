@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, status, Path
 
 from app.api.responses import (ALREADY_EXISTS, NOT_FOUND_RESPONSE,
                                SERVICE_ERROR, UNEXPECTED_ERROR)
@@ -35,7 +35,7 @@ async def create_inventory(
     return SuccessResponse(detail="Inventory created")
 
 
-@router.post(
+@router.patch(
     '/add_item',
     response_model=SuccessResponse,
     responses=NOT_FOUND_RESPONSE,
@@ -69,7 +69,12 @@ async def remove_from_inventory(
     return await inventory_service.use_item_from_inventory(item)
 
 
-@router.get('/user_inventory', response_model=InventoryResponse)
+@router.get(
+    '/user_inventory',
+    response_model=InventoryResponse,
+    summary="Получить инвентарь игрока",
+    description="Возвращает инвентарь пользователя",
+)
 async def get_user_inventory(
         inventory_service: Annotated[InventoryService, Depends()],
         user: Annotated[UserInfo, Depends(get_current_user)]
@@ -80,3 +85,22 @@ async def get_user_inventory(
     - **returns**: Инвентарь пользователя
     """
     return await inventory_service.get_user_inventory(user)
+
+
+@router.get(
+    '/all_inventory_with_item',
+    response_model=list[InventoryResponse],
+    summary="Получить все инвентари игроков, содержащие предмет с ID",
+    description="Возвращает инвентари пользователей",
+)
+async def get_all_inventory_with_item(
+        inventory_service: Annotated[InventoryService, Depends()],
+        item_id: int,
+        user: Annotated[UserInfo, Depends(get_current_user)]
+):
+    """
+    Получить все инвентари игроков, содержащие предмет с ID.
+
+    - **returns**: Инвентари пользователя
+    """
+    return await inventory_service.get_all_with_item(item_id)

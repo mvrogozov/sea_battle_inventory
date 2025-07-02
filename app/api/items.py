@@ -5,7 +5,7 @@ from fastapi import APIRouter, Path
 from fastapi.params import Depends
 
 from app.api.responses import (NOT_FOUND_RESPONSE, SERVICE_ERROR,
-                               UNEXPECTED_ERROR)
+                               UNEXPECTED_ERROR, DELETED_RESPONSE)
 from app.inventory.common import get_current_user
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.services.item_service import ItemService
@@ -32,11 +32,33 @@ async def get_items(
     return items
 
 
+@router.delete(
+    '/{item_id}',
+    summary="Удалить предмет по его ID",
+    responses=DELETED_RESPONSE,
+    description=(
+        'Удаляет предмет по его уникальному идентификатору. '
+        'Доступно только администраторам'
+    ),
+    tags=['admin']
+)
+async def delete_item(
+    item_service: Annotated[ItemService, Depends()],
+    user: Annotated[UserInfo, Depends(get_current_user)],
+    item_id: int = Path(
+        ..., gt=0, description="ID предмета (должен быть больше 0)"
+    )
+):
+    return await item_service.delete_item(item_id, user)
+
+
 @router.post(
     '/create',
     response_model=ItemResponse,
     summary="Создать новый предмет. Доступно только администратору",
-    description="Возвращает созданный предмет", )
+    description="Возвращает созданный предмет",
+    tags=['admin']
+)
 async def create_item(
         item: ItemCreate,
         item_service: Annotated[ItemService, Depends()],

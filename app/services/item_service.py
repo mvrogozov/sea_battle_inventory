@@ -1,6 +1,8 @@
 import logging
 import os
 from logging.handlers import RotatingFileHandler
+from fastapi.responses import Response
+from fastapi import status
 
 from app.config import settings
 from app.exceptions import (DatabaseError, ItemAlreadyExistsError,
@@ -122,3 +124,28 @@ class ItemService:
         """
         if user.role != 'admin':
             raise NotAdminError("Only admin allowed")
+
+    async def delete_item(self, item_id: int, user: UserInfo) -> Response:
+        """
+        Удалить предмет по его ID
+
+        :param item_id: идентификатор предмета
+        :return: предмет (Item) или None, если не найден
+        """
+        try:
+            if item_id <= 0:
+                raise ValidationError("Item ID must be positive")
+            await self.check_user_is_admin(user)
+            await self.check_item_exists(item_id)
+            await self.item_repository.delete_one_by_id(item_id)
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        except (NotFoundError, NotAdminError):
+            raise
+        except ValidationError:
+            raise
+        except DatabaseError as e:
+            logger.error(f"Database error in service: {e}")
+            raise ServiceError("Service temporarily unavailable") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in service: {e}")
+            raise ServiceError("Internal service error") from e

@@ -83,3 +83,18 @@ class BaseDAO:
         except Exception as e:
             logger.error(f"Unexpected error in repository: {e}")
             raise RepositoryError("Repository operation failed") from e
+
+    @classmethod
+    async def delete_one_by_id(cls, data_id: int):
+        try:
+            async with get_session() as session:
+                async with session.begin():
+                    obj = await session.get(cls.model, data_id)
+                    await session.delete(obj)
+                    return None
+        except SQLAlchemyError as e:
+            logger.error(f"Database error for item_id {data_id}: {e}")
+            raise DatabaseError(f"Failed to delete item {data_id}") from e
+        except Exception as e:
+            logger.error(f"Unexpected error in repository: {e}")
+            raise RepositoryError("Repository operation failed") from e
