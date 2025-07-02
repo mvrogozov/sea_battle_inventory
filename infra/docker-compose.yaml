@@ -14,6 +14,8 @@ services:
       options:
         max-size: 10m
         max-file: "3"
+    networks:
+      - monitoring-net
     volumes:
       - ../.data/db:/var/lib/postgresql/data
 
@@ -28,6 +30,8 @@ services:
       - postgresdb
     env_file:
       - .env
+    networks:
+      - monitoring-net
     volumes:
       - ../log:/application/app/logs
 
@@ -46,3 +50,42 @@ services:
       NGINX_ENVSUBST_TEMPLATE_SUFFIX: .conf
     ports:
       - "${HTTP_PORT}:80"
+    networks:
+      - monitoring-net
+
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheusdata:/prometheus
+    networks:
+      - monitoring-net
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      - grafana:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring-net
+
+volumes:
+  prometheusdata:
+  grafana:
+
+networks:
+  monitoring-net:
+    driver: bridge

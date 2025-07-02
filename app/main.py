@@ -5,6 +5,7 @@ from logging.handlers import RotatingFileHandler
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import SQLAlchemyError
 
 from app.api.inventory import router as inventory_router
@@ -45,6 +46,7 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
 
 @app.exception_handler(ValidationError)
