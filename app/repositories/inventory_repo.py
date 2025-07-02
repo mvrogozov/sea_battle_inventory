@@ -6,7 +6,8 @@ from sqlalchemy.sql import exists
 from app.base import BaseDAO
 from app.database import get_session
 from app.exceptions import (
-    DatabaseError, RepositoryError, InventoryAlreadyExistsError
+    DatabaseError, RepositoryError, InventoryAlreadyExistsError,
+    ValidationError, NotFoundError
 )
 from app.inventory.common import logger
 from app.inventory.models import Inventory, InventoryItem, Item
@@ -41,6 +42,10 @@ class InventoryRepository(BaseDAO):
             item_id: int,
             amount: int
     ):
+        if amount <= 0:
+            raise ValidationError(
+                detail='Amount should be positive'
+            )
         async with get_session() as session:
             async with session.begin():
                 query = select(cls.model).filter_by(user_id=user_id)
@@ -70,11 +75,6 @@ class InventoryRepository(BaseDAO):
                 ).scalar_one_or_none()
 
                 if existing_link:
-                    if existing_link.amount + amount < 0:
-                        raise HTTPException(
-                            status_code=status.HTTP_400_BAD_REQUEST,
-                            detail='Недостаточно средств'
-                        )
                     existing_link.amount += amount
                 else:
                     new_link = InventoryItem(
@@ -107,6 +107,7 @@ class InventoryRepository(BaseDAO):
                     select(
                         InventoryItem.item_id,
                         Item.name,
+                        Item.script,
                         InventoryItem.amount
                     )
                     .join(Item, InventoryItem.item_id == Item.id)
@@ -118,9 +119,10 @@ class InventoryRepository(BaseDAO):
                     InventoryItemResponse(
                         item_id=item_id,
                         name=name,
+                        script=script,
                         amount=amount
                     )
-                    for item_id, name, amount in items_data
+                    for item_id, name, script, amount in items_data
                 ]
                 return InventoryResponse(
                     user_id=user_id,
@@ -174,13 +176,13 @@ class InventoryRepository(BaseDAO):
                 result = await session.exec(query)
                 return result.scalar()
         except SQLAlchemyError as e:
-            logger.error(f"Database error for user_id {user_id}: {e}")
+            logger.error(f'Database error for user_id {user_id}: {e}')
             raise DatabaseError(
-                f"Failed to fetch inventory fot user - {user_id}"
+                f'Failed to fetch inventory fot user - {user_id}'
             ) from e
         except Exception as e:
-            logger.error(f"Unexpected error in repository: {e}")
-            raise RepositoryError("Repository operation failed") from e
+            logger.error(f'Unexpected error in repository: {e}')
+            raise RepositoryError('Repository operation failed') from e
 
     @classmethod
     async def use_item_from_inventory(cls, use_item: UseItem):
@@ -188,7 +190,9 @@ class InventoryRepository(BaseDAO):
             async with get_session() as session:
                 query = (
                     select(InventoryItem)
-                    .join(Inventory, InventoryItem.inventory_id == Inventory.id)
+                    .join(
+                        Inventory, InventoryItem.inventory_id == Inventory.id
+                    )
                     .where(
                         Inventory.user_id == use_item.user_id,
                         InventoryItem.item_id == use_item.item_id
@@ -196,15 +200,78 @@ class InventoryRepository(BaseDAO):
                 )
                 result = await session.exec(query)
                 db_item = result.scalar_one_or_none()
+                if db_item.amount < use_item.amount:
+                    raise ValidationError('Not unough items')
                 db_item.amount -= use_item.amount
                 if db_item.amount == 0:
                     await session.delete(db_item)
                 await session.commit()
+        except ValidationError:
+            raise
         except SQLAlchemyError as e:
-            logger.error(f"Database error for create new inventory: {e}")
-            raise DatabaseError(f"Failed to create new  inventory") from e
+            logger.error(f'Database error for create new inventory: {e}')
+            raise DatabaseError('Failed to create new  inventory') from e
         except InventoryAlreadyExistsError:
             raise
         except Exception as e:
-            logger.error(f"Unexpected error in repository: {e}")
-            raise RepositoryError("Repository operation failed") from e
+            logger.error(f'Unexpected error in repository: {e}')
+            raise RepositoryError('Repository operation failed') from e
+
+    @classmethod
+    async def get_inventories_with_item(
+        cls,
+        item_id: int
+    ):
+        async with get_session() as session:
+            async with session.begin():
+                item_query = select(Item).filter_by(id=item_id)
+                item_result = await session.exec(item_query)
+                item_obj: Item = item_result.scalar_one_or_none()
+                if not item_obj:
+                    raise NotFoundError(f"Item with ID {item_id} not found")
+                query = (
+                    select(
+                        InventoryItem.inventory_id,
+                        Inventory.user_id,
+                        Item.name,
+                        Item.script,
+                        InventoryItem.amount
+                    )
+                    .join(Item, InventoryItem.item_id == Item.id)
+                    .join(
+                        Inventory,
+                        InventoryItem.inventory_id == Inventory.id
+                    )
+                    .where(InventoryItem.item_id == item_id)
+                )
+
+                result = await session.exec(query)
+                items_data = result.all()
+                inventories = {}
+                for inventory_id, user_id, name, script, amount in items_data:
+                    if inventory_id not in inventories:
+                        inventories[inventory_id] = {
+                            'user_id': user_id,
+                            'items': []
+                        }
+                    inventories[inventory_id]['items'].append({
+                        'item_id': item_id,
+                        'name': name,
+                        'script': script,
+                        'amount': amount
+                    })
+                return [
+                    InventoryResponse(
+                        user_id=data['user_id'],
+                        items=[
+                            InventoryItemResponse(
+                                item_id=item['item_id'],
+                                name=item['name'],
+                                script=item['script'],
+                                amount=item['amount']
+                            )
+                            for item in data['items']
+                        ]
+                    )
+                    for inventory_id, data in inventories.items()
+                ]

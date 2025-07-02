@@ -29,7 +29,7 @@ class ServiceError(BaseAppException):
 
 
 class NotFoundError(BaseAppException):
-    """"Ошибка если редмет или инвентарь не найден"""
+    """"Ошибка если предмет или инвентарь не найден"""
     pass
 
 
