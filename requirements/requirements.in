@@ -7,3 +7,4 @@ asyncpg
 gunicorn
 PyJWT
 confluent_kafka
+aioredis

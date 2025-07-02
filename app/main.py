@@ -15,6 +15,9 @@ from app.exceptions import (BusinessError, InventoryAlreadyExistsError,
                             ItemAlreadyExistsError, NotAdminError,
                             NotFoundError, ServiceError, ValidationError)
 
+import aioredis
+from app.services.item_service import ItemService
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler(
@@ -28,15 +31,28 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
+redis_client = None
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """"""
+    global redis_client
+
     try:
         logger.info("Initializing database...")
         await init_db()
+
+        logger.info("Initializing Redis...")
+        redis_client = await aioredis.from_url(
+            "redis://redis:6379", encoding="utf-8", decode_responses=True
+        )
+        ItemService.set_redis(redis_client)
+
     except SQLAlchemyError as e:
         logger.critical(f"Failed to initialize database: {e}")
+        raise
+    except Exception as e:
+        logger.critical(f"Failed to initialize Redis: {e}")
         raise
 
     yield
@@ -45,7 +61,6 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(lifespan=lifespan)
-
 
 @app.exception_handler(ValidationError)
 async def validation_handler(request: Request, exc: ValidationError):

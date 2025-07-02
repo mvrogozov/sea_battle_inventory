@@ -11,6 +11,9 @@ from app.inventory.models import Item
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.repositories.item_repo import ItemRepository
 
+from aioredis import Redis
+import json
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler(
@@ -31,6 +34,14 @@ class ItemService:
     Содержит бизнес-логику для создания, получения и поиска предметов
     """
     item_repository = ItemRepository()
+    redis: Redis | None = None
+
+    def __init__(self):
+        self.redis = self.__class__.redis
+
+    @classmethod
+    def set_redis(cls, redis_client: Redis):
+        cls.redis = redis_client
 
     async def create_item(self, item: ItemCreate, user: UserInfo) -> Item:
         """
@@ -89,9 +100,25 @@ class ItemService:
             if item_id <= 0:
                 raise ValidationError("Item ID must be positive")
 
+            if not self.redis:
+                raise ServiceError("Redis client is not initialized")
+
+            cache_key = f"item:{item_id}"
+
+            cached = await self.redis.get(cache_key)
+            if cached:
+                item_data = json.loads(cached)
+                return Item.parse_obj(item_data)
+
             await self.check_item_exists(item_id)
             item = await self.item_repository.find_one_or_none_by_id(item_id)
+            if item is None:
+                return None
+
+            await self.redis.set(cache_key, item.json())
+
             return item
+
         except NotFoundError:
             raise
         except ValidationError:
