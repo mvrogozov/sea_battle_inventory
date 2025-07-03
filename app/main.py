@@ -5,6 +5,8 @@ from logging.handlers import RotatingFileHandler
 
 from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse
+from fastapi_cache import caches, close_caches
+from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -36,16 +38,35 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("Initializing database...")
         await init_db()
+        logger.info(f'Init cache...redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
+        rc = RedisCacheBackend(
+            f'redis://{settings.REDIS_HOST}',
+            encoding='utf-8'
+        )
+        try:
+            await rc.set("connection_test", "ok", expire=1)
+            test_value = await rc.get("connection_test")
+            if test_value != "ok":
+                raise RuntimeError("Redis connection test failed")
+        except Exception as e:
+            logger.critical(f"Redis connection failed: {str(e)}")
+            raise
+        caches.set(CACHE_KEY, rc)
+        logger.info('Init successfully')
     except SQLAlchemyError as e:
         logger.critical(f"Failed to initialize database: {e}")
         raise
 
     yield
     logger.info("Application shutdown started")
+    await close_caches()
     logger.info("Application shutdown completed")
 
 
-app = FastAPI(lifespan=lifespan)
+app = FastAPI(
+    summary='inventory',
+    lifespan=lifespan
+)
 Instrumentator().instrument(app).expose(app)
 
 

@@ -1,16 +1,19 @@
 import logging
+import json
+import pickle
 from typing import Annotated
 
 from fastapi import APIRouter, Path
 from fastapi.params import Depends
+from fastapi.encoders import jsonable_encoder
+from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 
 from app.api.responses import (NOT_FOUND_RESPONSE, SERVICE_ERROR,
                                UNEXPECTED_ERROR, DELETED_RESPONSE)
-from app.inventory.common import get_current_user
+from app.inventory.common import get_current_user, redis_cache, logger
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.services.item_service import ItemService
 
-logger = logging.getLogger(__name__)
 
 router = APIRouter(
     prefix='/items',
@@ -26,7 +29,8 @@ router = APIRouter(
     description="Возвращает список всех предметов в игре",
 )
 async def get_items(
-        item_service: Annotated[ItemService, Depends()],
+    item_service: Annotated[ItemService, Depends()],
+    cache: RedisCacheBackend = Depends(redis_cache),
 ):
     items = await item_service.get_all_items()
     return items
