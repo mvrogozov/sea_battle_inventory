@@ -7,7 +7,7 @@ from app.api.responses import (ALREADY_EXISTS, NOT_FOUND_RESPONSE,
 from app.inventory.common import get_current_user
 from app.inventory.schemas import (InventoryResponse, ItemToInventory,
                                    SuccessResponse, UseItem, UserInfo)
-from app.services.inventory_service import InventoryService
+from app.services.inventory_service import InventoryService, get_inventory_service
 
 router = APIRouter(
     prefix='/inventory',
@@ -28,7 +28,7 @@ router = APIRouter(
     ),
 )
 async def create_inventory(
-        inventory_service: Annotated[InventoryService, Depends()],
+        inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
         user: Annotated[UserInfo, Depends(get_current_user)]
 ):
     await inventory_service.create_inventory(user)
@@ -48,7 +48,7 @@ async def create_inventory(
 )
 async def add_to_inventory(
         item_to_inventory: ItemToInventory,
-        inventory_service: Annotated[InventoryService, Depends()],
+        inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
         user: Annotated[UserInfo, Depends(get_current_user)],
 ):
     await inventory_service.add_to_inventory(item_to_inventory, user)
@@ -63,7 +63,7 @@ async def add_to_inventory(
               )
 async def remove_from_inventory(
     item: UseItem,
-    inventory_service: Annotated[InventoryService, Depends()],
+    inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
     # user: Annotated[UserInfo, Depends(get_current_user)],
 ):
     return await inventory_service.use_item_from_inventory(item)
@@ -76,7 +76,7 @@ async def remove_from_inventory(
     description="Возвращает инвентарь пользователя",
 )
 async def get_user_inventory(
-        inventory_service: Annotated[InventoryService, Depends()],
+        inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
         user: Annotated[UserInfo, Depends(get_current_user)]
 ):
     """
@@ -94,7 +94,7 @@ async def get_user_inventory(
     description="Возвращает инвентари пользователей",
 )
 async def get_all_inventory_with_item(
-        inventory_service: Annotated[InventoryService, Depends()],
+        inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
         item_id: int,
         user: Annotated[UserInfo, Depends(get_current_user)]
 ):

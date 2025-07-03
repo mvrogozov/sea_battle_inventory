@@ -12,7 +12,7 @@ from app.api.responses import (NOT_FOUND_RESPONSE, SERVICE_ERROR,
                                UNEXPECTED_ERROR, DELETED_RESPONSE)
 from app.inventory.common import get_current_user, redis_cache, logger
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
-from app.services.item_service import ItemService
+from app.services.item_service import ItemService, get_item_service
 
 
 router = APIRouter(
@@ -29,8 +29,7 @@ router = APIRouter(
     description="Возвращает список всех предметов в игре",
 )
 async def get_items(
-    item_service: Annotated[ItemService, Depends()],
-    cache: RedisCacheBackend = Depends(redis_cache),
+    item_service: Annotated[ItemService, Depends(get_item_service)]
 ):
     items = await item_service.get_all_items()
     return items
@@ -47,7 +46,7 @@ async def get_items(
     tags=['admin']
 )
 async def delete_item(
-    item_service: Annotated[ItemService, Depends()],
+    item_service: Annotated[ItemService, Depends(get_item_service)],
     user: Annotated[UserInfo, Depends(get_current_user)],
     item_id: int = Path(
         ..., gt=0, description="ID предмета (должен быть больше 0)"
@@ -65,7 +64,7 @@ async def delete_item(
 )
 async def create_item(
         item: ItemCreate,
-        item_service: Annotated[ItemService, Depends()],
+        item_service: Annotated[ItemService, Depends(get_item_service)],
         user: Annotated[UserInfo, Depends(get_current_user)]
 ):
     return await item_service.create_item(item, user)
@@ -79,7 +78,7 @@ async def create_item(
     description="Возвращает предмет по его уникальному идентификатору",
 )
 async def get_item_by_id(
-        item_service: Annotated[ItemService, Depends()],
+        item_service: Annotated[ItemService, Depends(get_item_service)],
         item_id: int = Path(
             ..., gt=0, description="ID предмета (должен быть больше 0)"
         ),

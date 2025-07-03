@@ -12,7 +12,7 @@ from app.config import settings
 from app.exceptions import (DatabaseError, ItemAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError,
                             ValidationError)
-from app.inventory.common import producer, redis_cache
+from app.inventory.common import producer, redis_cache, get_cache
 from app.inventory.models import Item
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.repositories.item_repo import ItemRepository
@@ -37,7 +37,7 @@ class ItemService:
     Содержит бизнес-логику для создания, получения и поиска предметов
     """
 
-    def __init__(self, cache: RedisCacheBackend = Depends(redis_cache)):
+    def __init__(self, cache: RedisCacheBackend):
         self.item_repository = ItemRepository()
         self.cache = cache
 
@@ -193,3 +193,9 @@ class ItemService:
         except Exception as e:
             logger.error(f"Unexpected error in service: {e}")
             raise ServiceError("Internal service error") from e
+
+
+async def get_item_service(
+    cache: RedisCacheBackend = Depends(get_cache)
+) -> ItemService:
+    return ItemService(cache)

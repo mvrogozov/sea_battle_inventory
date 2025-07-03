@@ -1,15 +1,22 @@
 import logging
 import os
+import json
 from logging.handlers import RotatingFileHandler
+
+from fastapi import Depends
+from fastapi.encoders import jsonable_encoder
+from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
+
 
 from app.config import settings
 from app.exceptions import (DatabaseError, InventoryAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError)
 from app.inventory.models import Inventory
+from app.inventory.common import redis_cache, get_cache
 from app.inventory.schemas import (ItemToInventory, SuccessResponse, UseItem,
                                    UserInfo, InventoryResponse)
 from app.repositories.inventory_repo import InventoryRepository
-from app.services.item_service import ItemService
+from app.services.item_service import ItemService, get_item_service
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,8 +37,16 @@ class InventoryService:
     Содержит бизнес-логику для создания, получения и изменения инвентарей.
     """
 
-    inventory_repository = InventoryRepository()
-    item_service = ItemService()
+    #item_service = ItemService()
+
+    def __init__(
+        self,
+        item_service: ItemService,
+        cache: RedisCacheBackend
+    ):
+        self.inventory_repository = InventoryRepository()
+        self.cache = cache
+        self.item_service = item_service
 
     async def create_inventory(self, user: UserInfo) -> Inventory:
         """
@@ -76,6 +91,7 @@ class InventoryService:
         :return: обновлённый инвентарь
         """
         await self.check_user_is_admin(user)
+        await self.cache.delete(f'inventory_{user.user_id}')
         try:
             await self.item_service.get_item(item_to_inventory.item_id)
             is_inventory_exist = await self.inventory_repository.check_exists(
@@ -94,8 +110,28 @@ class InventoryService:
         :param user_id: идентификатор пользователя
         :return: инвентарь пользователя
         """
+        cache_key = f'inventory_{user.user_id}'
+        cached_data = await self.cache.get(cache_key)
+        if cached_data:
+            try:
+                logger.info('+++')
+                return json.loads(cached_data)
+            except json.JSONDecodeError:
+                logger.error('Failed to decode cached data')
         await self.check_inventory_exists(user.user_id)
-        return await self.inventory_repository.get_user_inventory(user.user_id)
+        inventory = await self.inventory_repository.get_user_inventory(
+            user.user_id
+        )
+        try:
+            logger.info('---')
+            await self.cache.set(
+                cache_key,
+                json.dumps(jsonable_encoder(inventory)),
+                expire=settings.CACHE_EXPIRE
+            )
+        except Exception as e:
+            logger.error(f'Cache set failed: {e}')
+        return inventory
 
     async def use_item_from_inventory(self, use_item: UseItem):
         """
@@ -156,3 +192,10 @@ class InventoryService:
         return await self.inventory_repository.get_inventories_with_item(
             item_id
         )
+
+
+async def get_inventory_service(
+    cache: RedisCacheBackend = Depends(get_cache),
+    item_service: ItemService = Depends(get_item_service),
+) -> InventoryService:
+    return InventoryService(cache, item_service)
