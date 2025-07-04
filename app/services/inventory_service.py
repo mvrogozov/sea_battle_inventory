@@ -162,7 +162,7 @@ class InventoryService:
 
         # Если предмета нет — выбрасываем NotFoundError
         raise NotFoundError(
-            f"User with ID {use_item.user_id} not have item {use_item.item_id}"
+            f"User with ID {user.user_id} not have item {use_item.item_id}"
         )
 
     async def check_inventory_exists(self, user_id: int) -> bool:
@@ -188,13 +188,18 @@ class InventoryService:
         if user.role != 'admin':
             raise NotAdminError("Only admin allowed")
 
-    async def get_all_with_item(self, item_id: int) -> list[InventoryResponse]:
+    async def get_all_with_item(
+        self,
+        item_id: int,
+        #promotion_id: int | None
+    ) -> list[InventoryResponse]:
         """
         Получить список всех инвентарей с предметом
         :return: список инвентарей
         """
         return await self.inventory_repository.get_inventories_with_item(
-            item_id
+            item_id,
+            #promotion_id
         )
 
 
