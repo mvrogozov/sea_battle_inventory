@@ -4,6 +4,8 @@ from logging.handlers import RotatingFileHandler
 
 import jwt
 from confluent_kafka import Producer
+from fastapi_cache import caches
+from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
@@ -53,3 +55,11 @@ async def get_current_user(
             detail='Wrong token',
             status_code=status.HTTP_401_UNAUTHORIZED
         )
+
+
+async def redis_cache():
+    return caches.get(CACHE_KEY)
+
+
+async def get_cache() -> RedisCacheBackend:
+    return await redis_cache()

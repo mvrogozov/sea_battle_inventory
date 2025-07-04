@@ -115,7 +115,7 @@ class InventoryRepository(BaseDAO):
                 )
                 result = await session.exec(query)
                 items_data = result.all()
-                items = [
+                linked_items = [
                     InventoryItemResponse(
                         item_id=item_id,
                         name=name,
@@ -126,7 +126,7 @@ class InventoryRepository(BaseDAO):
                 ]
                 return InventoryResponse(
                     user_id=user_id,
-                    items=items
+                    linked_items=linked_items
                 )
 
     @classmethod
@@ -185,7 +185,7 @@ class InventoryRepository(BaseDAO):
             raise RepositoryError('Repository operation failed') from e
 
     @classmethod
-    async def use_item_from_inventory(cls, use_item: UseItem):
+    async def use_item_from_inventory(cls, use_item: UseItem, user: UserInfo):
         try:
             async with get_session() as session:
                 query = (
@@ -194,7 +194,7 @@ class InventoryRepository(BaseDAO):
                         Inventory, InventoryItem.inventory_id == Inventory.id
                     )
                     .where(
-                        Inventory.user_id == use_item.user_id,
+                        Inventory.user_id == user.user_id,
                         InventoryItem.item_id == use_item.item_id
                     )
                 )

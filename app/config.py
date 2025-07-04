@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     db_name: str = Field(alias='POSTGRES_DB')
     db_port: int = Field(alias='DB_PORT', default=5432)
     KAFKA_SERVER: str = Field(alias='KAFKA_SERVER')
+    REDIS_HOST: str = Field(alias='REDIS_HOST')
+    REDIS_PORT: int = Field(alias='REDIS_PORT', default=6379)
+    CACHE_EXPIRE: int = 3600  # seconds
 
     @property
     def db_url(self) -> PostgresDsn:

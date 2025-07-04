@@ -19,9 +19,12 @@ class InventoryItem(SQLModel, table=True):
     )
     amount: int = Field(default=0, ge=0)
     inventory: Optional["Inventory"] = Relationship(
-        back_populates="inventory_items"
+        back_populates="inventory_items",
     )
-    item: Optional["Item"] = Relationship(back_populates="inventory_items")
+    item: Optional["Item"] = Relationship(
+        back_populates="inventory_items",
+        sa_relationship_kwargs={'cascade': 'all, delete'}
+    )
 
 
 class Item(SQLModel, table=True):
@@ -35,7 +38,8 @@ class Item(SQLModel, table=True):
     )
     kind: ItemKind = Field(default=ItemKind.CONSUMABLE)
     inventory_items: list["InventoryItem"] = Relationship(
-        back_populates="item"
+        back_populates="item",
+        sa_relationship_kwargs={'cascade': 'all, delete'}
     )
 
     class Config:

@@ -1,14 +1,18 @@
 import logging
 import os
+import json
 from logging.handlers import RotatingFileHandler
 from fastapi.responses import Response
-from fastapi import status
+from fastapi.encoders import jsonable_encoder
+from fastapi import status, Depends
+from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
+
 
 from app.config import settings
 from app.exceptions import (DatabaseError, ItemAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError,
                             ValidationError)
-from app.inventory.common import producer
+from app.inventory.common import producer, redis_cache, get_cache
 from app.inventory.models import Item
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.repositories.item_repo import ItemRepository
@@ -32,7 +36,10 @@ class ItemService:
     Сервис для работы с предметами (Item)
     Содержит бизнес-логику для создания, получения и поиска предметов
     """
-    item_repository = ItemRepository()
+
+    def __init__(self, cache: RedisCacheBackend):
+        self.item_repository = ItemRepository()
+        self.cache = cache
 
     async def create_item(self, item: ItemCreate, user: UserInfo) -> Item:
         """
@@ -48,6 +55,7 @@ class ItemService:
         if is_item_exist:
             raise ItemAlreadyExistsError('Item already exists')
         try:
+            await self.cache.delete('items_list')
             new_instance: Item = await (
                 self.item_repository.add(item.model_dump())
             )
@@ -70,8 +78,25 @@ class ItemService:
 
         :return: список предметов (list[ItemResponse])
         """
+        cache_key = 'items_list'
         try:
+            cached_data = await self.cache.get(cache_key)
+            if cached_data:
+                try:
+                    logger.info('+++')
+                    return json.loads(cached_data)
+                except json.JSONDecodeError:
+                    logger.error('Failed to decode cached data')
             items = await self.item_repository.find_all()
+            try:
+                logger.info('---')
+                await self.cache.set(
+                    cache_key,
+                    json.dumps(jsonable_encoder(items)),
+                    expire=settings.CACHE_EXPIRE
+                )
+            except Exception as e:
+                logger.error(f'Cache set failed: {e}')
             return items
         except DatabaseError as e:
             logger.error(f"Database error in service: {e}")
@@ -87,12 +112,28 @@ class ItemService:
         :param item_id: идентификатор предмета
         :return: предмет (Item) или None, если не найден
         """
+        cache_key = f'item_{item_id}'
         try:
             if item_id <= 0:
                 raise ValidationError("Item ID must be positive")
-
+            cached_data = await self.cache.get(cache_key)
+            if cached_data:
+                try:
+                    logger.info('+++')
+                    return json.loads(cached_data)
+                except json.JSONDecodeError:
+                    logger.error('Failed to decode cached data')
             await self.check_item_exists(item_id)
             item = await self.item_repository.find_one_or_none_by_id(item_id)
+            try:
+                logger.info('---')
+                await self.cache.set(
+                    cache_key,
+                    json.dumps(jsonable_encoder(item)),
+                    expire=settings.CACHE_EXPIRE
+                )
+            except Exception as e:
+                logger.error(f'Cache set failed: {e}')
             return item
         except NotFoundError:
             raise
@@ -132,11 +173,15 @@ class ItemService:
         :param item_id: идентификатор предмета
         :return: предмет (Item) или None, если не найден
         """
+        cache_key = f'item_{item_id}'
         try:
             if item_id <= 0:
                 raise ValidationError("Item ID must be positive")
             await self.check_user_is_admin(user)
             await self.check_item_exists(item_id)
+            await self.cache.delete(cache_key)
+            await self.cache.flush()
+            await self.cache.delete('items_list')
             await self.item_repository.delete_one_by_id(item_id)
             return Response(status_code=status.HTTP_204_NO_CONTENT)
         except (NotFoundError, NotAdminError):
@@ -149,3 +194,9 @@ class ItemService:
         except Exception as e:
             logger.error(f"Unexpected error in service: {e}")
             raise ServiceError("Internal service error") from e
+
+
+async def get_item_service(
+    cache: RedisCacheBackend = Depends(get_cache)
+) -> ItemService:
+    return ItemService(cache)
