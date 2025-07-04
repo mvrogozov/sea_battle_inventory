@@ -180,6 +180,7 @@ class ItemService:
             await self.check_user_is_admin(user)
             await self.check_item_exists(item_id)
             await self.cache.delete(cache_key)
+            await self.cache.flush()
             await self.cache.delete('items_list')
             await self.item_repository.delete_one_by_id(item_id)
             return Response(status_code=status.HTTP_204_NO_CONTENT)

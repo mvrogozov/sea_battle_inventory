@@ -64,9 +64,9 @@ async def add_to_inventory(
 async def remove_from_inventory(
     item: UseItem,
     inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
-    # user: Annotated[UserInfo, Depends(get_current_user)],
+    user: Annotated[UserInfo, Depends(get_current_user)],
 ):
-    return await inventory_service.use_item_from_inventory(item)
+    return await inventory_service.use_item_from_inventory(item, user)
 
 
 @router.get(

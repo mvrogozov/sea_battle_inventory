@@ -85,21 +85,21 @@ class InventoryService:
         user: UserInfo
     ):
         """
-        Добавить предмет в инвентарь пользователя (только для администратора)
+        Добавить предмет в инвентарь пользователя
         :param item_to_inventory: данные о добавляемом предмете
-        :param user: информация о пользователе (должен быть админ)
+        :param user: информация о пользователе
         :return: обновлённый инвентарь
         """
-        await self.check_user_is_admin(user)
         await self.cache.delete(f'inventory_{user.user_id}')
         try:
             await self.item_service.get_item(item_to_inventory.item_id)
             is_inventory_exist = await self.inventory_repository.check_exists(
-                item_to_inventory.user_id
+                user.user_id
             )
 
             if is_inventory_exist:
                 fields = item_to_inventory.model_dump()
+                fields.update({'user_id': user.user_id})
                 return await self.inventory_repository.add_item(**fields)
         except NotFoundError:
             raise
@@ -115,7 +115,7 @@ class InventoryService:
         if cached_data:
             try:
                 logger.info('+++')
-                return json.loads(cached_data)
+                return InventoryResponse(**json.loads(cached_data))
             except json.JSONDecodeError:
                 logger.error('Failed to decode cached data')
         await self.check_inventory_exists(user.user_id)
@@ -127,13 +127,17 @@ class InventoryService:
             await self.cache.set(
                 cache_key,
                 json.dumps(jsonable_encoder(inventory)),
-                expire=settings.CACHE_EXPIRE
+                expire=settings.CACHE_EXPIRE,
             )
         except Exception as e:
             logger.error(f'Cache set failed: {e}')
         return inventory
 
-    async def use_item_from_inventory(self, use_item: UseItem):
+    async def use_item_from_inventory(
+        self,
+        use_item: UseItem,
+        user: UserInfo
+    ):
         """
         Использование и списание предмета из инвентаря пользователя
         Проверяет наличие инвентаря и предмета, уменьшает количество
@@ -141,17 +145,17 @@ class InventoryService:
         :param use_item: данные о списываемом предмете
         :return: SuccessResponse при успехе
         """
-        await self.check_inventory_exists(use_item.user_id)
+        await self.check_inventory_exists(user.user_id)
         await self.item_service.check_item_exists(use_item.item_id)
-        user_inventory = await self.get_user_inventory(
-            UserInfo(user_id=use_item.user_id, role='')
-        )
+        user_inventory = await self.get_user_inventory(user)
 
         # Проверяем, есть ли нужный предмет в инвентаре пользователя
+        logger.info(f'153>> {user_inventory}')
         if any(
-            item.item_id == use_item.item_id for item in user_inventory.items
+            item.item_id == use_item.item_id for item in user_inventory.linked_items
         ):
-            await self.inventory_repository.use_item_from_inventory(use_item)
+            await self.inventory_repository.use_item_from_inventory(use_item, user)
+            await self.cache.delete(f'inventory_{user.user_id}')
             return SuccessResponse(
                 detail=f"Item {use_item.item_id} used success"
             )
@@ -198,4 +202,4 @@ async def get_inventory_service(
     cache: RedisCacheBackend = Depends(get_cache),
     item_service: ItemService = Depends(get_item_service),
 ) -> InventoryService:
-    return InventoryService(cache, item_service)
+    return InventoryService(cache=cache, item_service=item_service)
