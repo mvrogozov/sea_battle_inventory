@@ -32,6 +32,7 @@ class Item(SQLModel, table=True):
     id: Optional[int] = Field(default=None, primary_key=True, index=True)
     name: str = Field(unique=True, index=True)
     description: str | None = Field(default=None)
+    promotion_id: int | None = Field(default=None)
     script: Optional[str] = Field(
         default=None,
         description="Мета-язык/скрипт для ядра"

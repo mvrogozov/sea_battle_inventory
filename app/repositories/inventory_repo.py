@@ -220,7 +220,8 @@ class InventoryRepository(BaseDAO):
     @classmethod
     async def get_inventories_with_item(
         cls,
-        item_id: int
+        item_id: int,
+        #promotion_id: int | None
     ):
         async with get_session() as session:
             async with session.begin():
@@ -235,6 +236,7 @@ class InventoryRepository(BaseDAO):
                         Inventory.user_id,
                         Item.name,
                         Item.script,
+                        Item.promotion_id,
                         InventoryItem.amount
                     )
                     .join(Item, InventoryItem.item_id == Item.id)
@@ -248,29 +250,38 @@ class InventoryRepository(BaseDAO):
                 result = await session.exec(query)
                 items_data = result.all()
                 inventories = {}
-                for inventory_id, user_id, name, script, amount in items_data:
+                for (
+                    inventory_id,
+                    user_id,
+                    name,
+                    script,
+                    promotion_id,
+                    amount
+                 ) in items_data:
                     if inventory_id not in inventories:
                         inventories[inventory_id] = {
                             'user_id': user_id,
-                            'items': []
+                            'linked_items': []
                         }
-                    inventories[inventory_id]['items'].append({
+                    inventories[inventory_id]['linked_items'].append({
                         'item_id': item_id,
                         'name': name,
                         'script': script,
+                        'promotion_id': promotion_id,
                         'amount': amount
                     })
                 return [
                     InventoryResponse(
                         user_id=data['user_id'],
-                        items=[
+                        linked_items=[
                             InventoryItemResponse(
                                 item_id=item['item_id'],
                                 name=item['name'],
+                                promotion_id=item['promotion_id'],
                                 script=item['script'],
                                 amount=item['amount']
                             )
-                            for item in data['items']
+                            for item in data['linked_items']
                         ]
                     )
                     for inventory_id, data in inventories.items()

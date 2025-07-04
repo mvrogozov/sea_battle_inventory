@@ -94,8 +94,12 @@ async def get_user_inventory(
     description="Возвращает инвентари пользователей",
 )
 async def get_all_inventory_with_item(
-        inventory_service: Annotated[InventoryService, Depends(get_inventory_service)],
+        inventory_service: Annotated[
+            InventoryService,
+            Depends(get_inventory_service)
+        ],
         item_id: int,
+        #promotion_id: int | None,
         user: Annotated[UserInfo, Depends(get_current_user)]
 ):
     """
