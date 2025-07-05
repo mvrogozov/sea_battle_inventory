@@ -1,11 +1,13 @@
 import logging
 import os
 import json
+import asyncio
 from logging.handlers import RotatingFileHandler
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
 from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
+from confluent_kafka import Consumer
 
 
 from app.config import settings
@@ -36,8 +38,6 @@ class InventoryService:
     Сервис для работы с инвентарями пользователей.
     Содержит бизнес-логику для создания, получения и изменения инвентарей.
     """
-
-    #item_service = ItemService()
 
     def __init__(
         self,
@@ -114,7 +114,6 @@ class InventoryService:
         cached_data = await self.cache.get(cache_key)
         if cached_data:
             try:
-                logger.info('+++')
                 return InventoryResponse(**json.loads(cached_data))
             except json.JSONDecodeError:
                 logger.error('Failed to decode cached data')
@@ -123,7 +122,6 @@ class InventoryService:
             user.user_id
         )
         try:
-            logger.info('---')
             await self.cache.set(
                 cache_key,
                 json.dumps(jsonable_encoder(inventory)),
@@ -149,12 +147,14 @@ class InventoryService:
         await self.item_service.check_item_exists(use_item.item_id)
         user_inventory = await self.get_user_inventory(user)
 
-        # Проверяем, есть ли нужный предмет в инвентаре пользователя
-        logger.info(f'153>> {user_inventory}')
         if any(
-            item.item_id == use_item.item_id for item in user_inventory.linked_items
+            item.item_id == use_item.item_id
+            for item in user_inventory.linked_items
         ):
-            await self.inventory_repository.use_item_from_inventory(use_item, user)
+            await self.inventory_repository.use_item_from_inventory(
+                use_item,
+                user
+            )
             await self.cache.delete(f'inventory_{user.user_id}')
             return SuccessResponse(
                 detail=f"Item {use_item.item_id} used success"
@@ -208,3 +208,51 @@ async def get_inventory_service(
     item_service: ItemService = Depends(get_item_service),
 ) -> InventoryService:
     return InventoryService(cache=cache, item_service=item_service)
+
+
+class KafkaConsumer:
+    def __init__(self):
+        self.consumer_conf = {
+            'bootstrap.servers': settings.KAFKA_SERVER,
+            'group.id': 'inventory',
+            'enable.auto.commit': False,
+            'auto.offset.reset': 'earliest',
+        }
+        self.topic_name = 'prod.auth.fact.new-user.1'
+
+    async def consume_message(self):
+        """Получение сообщения из kafka"""
+
+        consumer = Consumer(self.consumer_conf)
+        consumer.subscribe([self.topic_name])
+        logger.info('Starting concuming kafka...')
+        try:
+            while True:
+                msg = consumer.poll(1.0)
+                if msg is None:
+                    continue
+                if msg.error():
+                    logger.error(f'Consumer error: {msg.error()}')
+                    continue
+                self.process_message(msg)
+                consumer.commit(msg)
+        except Exception as e:
+            logger.error(f'Consumer error: {e}')
+        finally:
+            consumer.close()
+
+    async def process_message(self, msg):
+        try:
+            message = json.loads(msg.value().decode('utf-8'))
+            logger.info(f'Recieved message from kafka: {message}')
+            # add inv user
+            user_id = message.get('user_id')
+            if user_id:
+                inv_service = get_inventory_service(
+                    UserInfo(user_id=user_id)
+                )
+                inv_service.create_inventory()
+        except json.JSONDecodeError as e:
+            logger.error(f'Consumer msg decode error: {e}')
+
+

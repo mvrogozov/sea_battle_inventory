@@ -1,5 +1,6 @@
 import logging
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from logging.handlers import RotatingFileHandler
 
@@ -9,10 +10,13 @@ from fastapi_cache import caches, close_caches
 from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 from prometheus_fastapi_instrumentator import Instrumentator
 from sqlalchemy.exc import SQLAlchemyError
+from confluent_kafka import Consumer
 
 from app.api.inventory import router as inventory_router
 from app.api.items import router as item_router
 from app.config import settings
+from app.services.inventory_service import KafkaConsumer
+
 from app.database import init_db
 from app.exceptions import (BusinessError, InventoryAlreadyExistsError,
                             ItemAlreadyExistsError, NotAdminError,
@@ -38,7 +42,7 @@ async def lifespan(app: FastAPI):
     try:
         logger.info("Initializing database...")
         await init_db()
-        logger.info(f'Init cache...redis://{settings.REDIS_HOST}:{settings.REDIS_PORT}')
+        logger.info('Init cache...')
         rc = RedisCacheBackend(
             f'redis://{settings.REDIS_HOST}',
             encoding='utf-8'
@@ -52,7 +56,9 @@ async def lifespan(app: FastAPI):
             logger.critical(f"Redis connection failed: {str(e)}")
             raise
         caches.set(CACHE_KEY, rc)
-        logger.info('Init successfully')
+        logger.info('Init cache successfully')
+        consumer = KafkaConsumer()
+        asyncio.create_task(consumer.consume_message())
     except SQLAlchemyError as e:
         logger.critical(f"Failed to initialize database: {e}")
         raise

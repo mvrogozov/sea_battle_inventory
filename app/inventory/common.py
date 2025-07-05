@@ -1,15 +1,17 @@
 import logging
 import os
+
 from logging.handlers import RotatingFileHandler
 
 import jwt
-from confluent_kafka import Producer
+from confluent_kafka import Producer, Consumer
 from fastapi_cache import caches
 from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.config import settings
+# from app.services.inventory_service import get_inventory_service
 from app.inventory.schemas import UserInfo
 
 logger = logging.getLogger(__name__)
@@ -27,13 +29,18 @@ handler.setFormatter(formatter)
 
 try:
     producer = Producer({'bootstrap.servers': settings.KAFKA_SERVER})
+
 except Exception as e:
     logger.error(f'Kafka error: {e}')
+
 security_scheme = HTTPBearer(
     bearerFormat="JWT",
     scheme_name="JWT Auth",
     description="Введите ваш JWT токен в формате: Bearer <token>"
 )
+
+
+
 
 
 async def get_current_user(
@@ -63,3 +70,4 @@ async def redis_cache():
 
 async def get_cache() -> RedisCacheBackend:
     return await redis_cache()
+
