@@ -18,7 +18,7 @@ class BaseItem(BaseModel):
     name: str
     kind: ItemKind
     description: str
-    promotion_id: int | None
+    shop_item_id: int | None
     script: str = None
 
 
@@ -31,7 +31,7 @@ class ItemCreate(SQLModel):
     description: str | None = None
     script: str | None = None
     kind: ItemKind = ItemKind.CONSUMABLE
-    promotion_id: int | None = None
+    shop_item_id: int | None = None
 
 
 class ItemToInventory(BaseModel):
@@ -46,7 +46,7 @@ class ItemToInventory(BaseModel):
 class InventoryItemResponse(SQLModel):
     item_id: int
     name: str
-    promotion_id: int | None = None
+    shop_item_id: int | None = None
     amount: int
     script: str
 
