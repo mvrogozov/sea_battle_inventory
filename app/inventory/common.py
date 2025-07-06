@@ -61,5 +61,5 @@ async def redis_cache():
     return caches.get(CACHE_KEY)
 
 
-async def get_cache() -> RedisCacheBackend:
+async def get_cache() -> RedisCacheBackend | None:
     return await redis_cache()
