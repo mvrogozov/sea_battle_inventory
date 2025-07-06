@@ -8,8 +8,8 @@ services:
     mem_limit: 1G
     env_file:
       - .env
-    ports:
-      - '5432:5432'
+    # ports:
+    #   - '5432:5432'
     logging:
       options:
         max-size: 10m
@@ -69,22 +69,22 @@ services:
     networks:
       - monitoring-net
 
-  # grafana:
-  #   image: grafana/grafana:latest
-  #   container_name: grafana
-  #   ports:
-  #     - "3000:3000"
-  #   environment:
-  #     - GF_SECURITY_ADMIN_USER=admin
-  #     - GF_SECURITY_ADMIN_PASSWORD=admin
-  #   volumes:
-  #     - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
-  #     - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-  #     #- grafana:/var/lib/grafana
-  #   depends_on:
-  #     - prometheus
-  #   networks:
-  #     - monitoring-net
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
+      #- grafana:/var/lib/grafana
+    depends_on:
+      - prometheus
+    networks:
+      - monitoring-net
 
 # volumes:
 #   prometheusdata:

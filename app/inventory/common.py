@@ -1,9 +1,9 @@
 import logging
 import os
+
 from logging.handlers import RotatingFileHandler
 
 import jwt
-from confluent_kafka import Producer
 from fastapi_cache import caches
 from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 from fastapi import Depends, HTTPException, status
@@ -25,10 +25,6 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 
-try:
-    producer = Producer({'bootstrap.servers': settings.KAFKA_SERVER})
-except Exception as e:
-    logger.error(f'Kafka error: {e}')
 security_scheme = HTTPBearer(
     bearerFormat="JWT",
     scheme_name="JWT Auth",
