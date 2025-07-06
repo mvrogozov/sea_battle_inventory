@@ -85,7 +85,7 @@ app = FastAPI(
     summary='inventory',
     lifespan=lifespan
 )
-Instrumentator().instrument(app).expose(app)
+Instrumentator().instrument(app).expose(app, include_in_schema=False)
 
 
 @app.exception_handler(ValidationError)

@@ -48,6 +48,7 @@ class ItemService:
         Создать новый предмет. Доступен только администратору
 
         :param item: данные нового предмета (ItemCreate)
+        :param user: пользователь
         :return: созданный предмет (Item)
         """
         await self.check_user_is_admin(user)
@@ -173,6 +174,7 @@ class ItemService:
         Удалить предмет по его ID
 
         :param item_id: идентификатор предмета
+        :param user: пользователь
         :return: предмет (Item) или None, если не найден
         """
         cache_key = f'item_{item_id}'

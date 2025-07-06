@@ -107,7 +107,7 @@ class InventoryService:
     async def get_user_inventory(self, user: UserInfo):
         """
         Получить инвентарь пользователя по user_id
-        :param user_id: идентификатор пользователя
+        :param user: пользователь
         :return: инвентарь пользователя
         """
         cache_key = f'inventory_{user.user_id}'
@@ -141,6 +141,7 @@ class InventoryService:
         Проверяет наличие инвентаря и предмета, уменьшает количество
         или удаляет предмет
         :param use_item: данные о списываемом предмете
+        :param user: пользователь
         :return: SuccessResponse при успехе
         """
         await self.check_inventory_exists(user.user_id)
