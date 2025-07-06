@@ -6,7 +6,7 @@ alembic
 asyncpg
 gunicorn
 PyJWT
-confluent_kafka
 prometheus-client
 prometheus-fastapi-instrumentator
 fastapi-cache
+aiokafka
