@@ -19,8 +19,7 @@ class InventoryRepository(BaseDAO):
     model = Inventory
 
     @classmethod
-    async def add_for_current_user(cls, user: UserInfo):
-        user_id = user.user_id
+    async def add_for_current_user(cls, user_id):
         async with get_session() as session:
             async with session.begin():
                 query = select(exists().where(cls.model.user_id == user_id))

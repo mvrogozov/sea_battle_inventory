@@ -48,21 +48,21 @@ class InventoryService:
         self.cache = cache
         self.item_service = item_service
 
-    async def create_inventory(self, user: UserInfo) -> Inventory:
+    async def create_inventory(self, user_id) -> Inventory:
         """
         Создать инвентарь для пользователя
         Если инвентарь уже существует — выбрасывает InventoryAlreadyExistsError
-        :param user: информация о пользователе
+        :param user_id: id пользователя
         :return: созданный инвентарь
         """
         is_inventory_exist = await (
-            self.inventory_repository.check_exists(user.user_id)
+            self.inventory_repository.check_exists(user_id)
         )
         if not is_inventory_exist:
             try:
                 new_inventory = await (
                     self.inventory_repository.add_for_current_user(
-                        user
+                        user_id
                     )
                 )
                 return new_inventory
@@ -107,7 +107,7 @@ class InventoryService:
     async def get_user_inventory(self, user: UserInfo):
         """
         Получить инвентарь пользователя по user_id
-        :param user_id: идентификатор пользователя
+        :param user: пользователь
         :return: инвентарь пользователя
         """
         cache_key = f'inventory_{user.user_id}'
@@ -143,6 +143,7 @@ class InventoryService:
         Проверяет наличие инвентаря и предмета, уменьшает количество
         или удаляет предмет
         :param use_item: данные о списываемом предмете
+        :param user: пользователь
         :return: SuccessResponse при успехе
         """
         await self.check_inventory_exists(user.user_id)
