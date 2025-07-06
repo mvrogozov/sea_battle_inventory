@@ -5,14 +5,14 @@ from logging.handlers import RotatingFileHandler
 from fastapi.responses import Response
 from fastapi.encoders import jsonable_encoder
 from fastapi import status, Depends
-from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
+from fastapi_cache.backends.redis import RedisCacheBackend
 
 
 from app.config import settings
 from app.exceptions import (DatabaseError, ItemAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError,
                             ValidationError)
-from app.inventory.common import producer, redis_cache, get_cache
+from app.inventory.common import producer, get_cache
 from app.inventory.models import Item
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.repositories.item_repo import ItemRepository
@@ -46,6 +46,7 @@ class ItemService:
         Создать новый предмет. Доступен только администратору
 
         :param item: данные нового предмета (ItemCreate)
+        :param user: пользователь
         :return: созданный предмет (Item)
         """
         await self.check_user_is_admin(user)
@@ -171,6 +172,7 @@ class ItemService:
         Удалить предмет по его ID
 
         :param item_id: идентификатор предмета
+        :param user: пользователь
         :return: предмет (Item) или None, если не найден
         """
         cache_key = f'item_{item_id}'
