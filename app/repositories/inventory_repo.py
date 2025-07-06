@@ -236,7 +236,7 @@ class InventoryRepository(BaseDAO):
                         Inventory.user_id,
                         Item.name,
                         Item.script,
-                        Item.promotion_id,
+                        Item.shop_item_id,
                         InventoryItem.amount
                     )
                     .join(Item, InventoryItem.item_id == Item.id)
@@ -255,7 +255,7 @@ class InventoryRepository(BaseDAO):
                     user_id,
                     name,
                     script,
-                    promotion_id,
+                    shop_item_id,
                     amount
                  ) in items_data:
                     if inventory_id not in inventories:
@@ -267,7 +267,7 @@ class InventoryRepository(BaseDAO):
                         'item_id': item_id,
                         'name': name,
                         'script': script,
-                        'promotion_id': promotion_id,
+                        'shop_item_id': shop_item_id,
                         'amount': amount
                     })
                 return [
@@ -277,7 +277,7 @@ class InventoryRepository(BaseDAO):
                             InventoryItemResponse(
                                 item_id=item['item_id'],
                                 name=item['name'],
-                                promotion_id=item['promotion_id'],
+                                shop_item_id=item['shop_item_id'],
                                 script=item['script'],
                                 amount=item['amount']
                             )
