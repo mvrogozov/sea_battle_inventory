@@ -5,14 +5,14 @@ from logging.handlers import RotatingFileHandler
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
-from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
+from fastapi_cache.backends.redis import RedisCacheBackend
 
 
 from app.config import settings
 from app.exceptions import (DatabaseError, InventoryAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError)
 from app.inventory.models import Inventory
-from app.inventory.common import redis_cache, get_cache
+from app.inventory.common import get_cache
 from app.inventory.schemas import (ItemToInventory, SuccessResponse, UseItem,
                                    UserInfo, InventoryResponse)
 from app.repositories.inventory_repo import InventoryRepository
