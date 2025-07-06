@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, status, Path
+from fastapi import APIRouter, Depends, status
 
 from app.api.responses import (ALREADY_EXISTS, NOT_FOUND_RESPONSE,
                                SERVICE_ERROR, UNEXPECTED_ERROR)
