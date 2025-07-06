@@ -1,16 +1,11 @@
-import logging
-import json
-import pickle
 from typing import Annotated
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, Request
 from fastapi.params import Depends
-from fastapi.encoders import jsonable_encoder
-from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
 
 from app.api.responses import (NOT_FOUND_RESPONSE, SERVICE_ERROR,
                                UNEXPECTED_ERROR, DELETED_RESPONSE)
-from app.inventory.common import get_current_user, redis_cache, logger
+from app.inventory.common import get_current_user
 from app.inventory.schemas import ItemCreate, ItemResponse, UserInfo
 from app.services.item_service import ItemService, get_item_service
 
@@ -63,11 +58,12 @@ async def delete_item(
     tags=['admin']
 )
 async def create_item(
+        request: Request,
         item: ItemCreate,
         item_service: Annotated[ItemService, Depends(get_item_service)],
         user: Annotated[UserInfo, Depends(get_current_user)]
 ):
-    return await item_service.create_item(item, user)
+    return await item_service.create_item(item, user, request)
 
 
 @router.get(

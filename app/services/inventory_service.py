@@ -1,36 +1,36 @@
 import logging
 import os
 import json
-import asyncio
 from logging.handlers import RotatingFileHandler
 
 from fastapi import Depends
 from fastapi.encoders import jsonable_encoder
-from fastapi_cache.backends.redis import CACHE_KEY, RedisCacheBackend
-from confluent_kafka import Consumer
+from fastapi_cache.backends.redis import RedisCacheBackend
+from aiokafka import AIOKafkaConsumer
 
 
 from app.config import settings
 from app.exceptions import (DatabaseError, InventoryAlreadyExistsError,
                             NotAdminError, NotFoundError, ServiceError)
 from app.inventory.models import Inventory
-from app.inventory.common import redis_cache, get_cache
+from app.inventory.common import get_cache
 from app.inventory.schemas import (ItemToInventory, SuccessResponse, UseItem,
                                    UserInfo, InventoryResponse)
 from app.repositories.inventory_repo import InventoryRepository
 from app.services.item_service import ItemService, get_item_service
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(asctime)s - %(name)s - %(message)s'
-)
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 handler = RotatingFileHandler(
-    os.path.join(settings.LOG_PATH, 'app_service.log'),
+    os.path.join(settings.LOG_PATH, 'app.log'),
     maxBytes=50000,
     backupCount=1
 )
 logger.addHandler(handler)
+formatter = logging.Formatter(
+    '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
+handler.setFormatter(formatter)
 
 
 class InventoryService:
@@ -191,7 +191,6 @@ class InventoryService:
     async def get_all_with_item(
         self,
         item_id: int,
-        #promotion_id: int | None
     ) -> list[InventoryResponse]:
         """
         Получить список всех инвентарей с предметом
@@ -199,7 +198,6 @@ class InventoryService:
         """
         return await self.inventory_repository.get_inventories_with_item(
             item_id,
-            #promotion_id
         )
 
 
@@ -212,47 +210,40 @@ async def get_inventory_service(
 
 class KafkaConsumer:
     def __init__(self):
-        self.consumer_conf = {
-            'bootstrap.servers': settings.KAFKA_SERVER,
-            'group.id': 'inventory',
-            'enable.auto.commit': False,
-            'auto.offset.reset': 'earliest',
-        }
         self.topic_name = 'prod.auth.fact.new-user.1'
+        self.bootstrap_servers = settings.KAFKA_SERVER
+        self.group_id = 'inventory'
 
     async def consume_message(self):
         """Получение сообщения из kafka"""
 
-        consumer = Consumer(self.consumer_conf)
-        consumer.subscribe([self.topic_name])
+        consumer = AIOKafkaConsumer(
+            self.topic_name,
+            bootstrap_servers=self.bootstrap_servers,
+            group_id=self.group_id,
+            auto_offset_reset='earliest'
+        )
+        await consumer.start()
         logger.info('Starting concuming kafka...')
+
         try:
-            while True:
-                msg = consumer.poll(1.0)
-                if msg is None:
-                    continue
-                if msg.error():
-                    logger.error(f'Consumer error: {msg.error()}')
-                    continue
-                self.process_message(msg)
-                consumer.commit(msg)
+            async for msg in consumer:
+                await self.process_message(msg)
         except Exception as e:
             logger.error(f'Consumer error: {e}')
         finally:
-            consumer.close()
+            await consumer.stop()
 
     async def process_message(self, msg):
         try:
-            message = json.loads(msg.value().decode('utf-8'))
+            message = json.loads(msg.value.decode('utf-8'))
             logger.info(f'Recieved message from kafka: {message}')
-            # add inv user
             user_id = message.get('user_id')
+            role = message.get('role')
             if user_id:
-                inv_service = get_inventory_service(
-                    UserInfo(user_id=user_id)
+                inv_service = await get_inventory_service()
+                await inv_service.create_inventory(
+                    UserInfo(user_id=user_id, role=role)
                 )
-                inv_service.create_inventory()
         except json.JSONDecodeError as e:
             logger.error(f'Consumer msg decode error: {e}')
-
-
