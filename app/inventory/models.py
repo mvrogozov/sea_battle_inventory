@@ -37,6 +37,8 @@ class Item(SQLModel, table=True):
         default=None,
         description="Мета-язык/скрипт для ядра"
     )
+    use_limit: int = Field(default=1)
+    cooldown: int = Field(default=0)
     kind: ItemKind = Field(default=ItemKind.CONSUMABLE)
     inventory_items: list["InventoryItem"] = Relationship(
         back_populates="item",

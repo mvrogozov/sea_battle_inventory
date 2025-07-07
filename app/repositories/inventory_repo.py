@@ -109,6 +109,8 @@ class InventoryRepository(BaseDAO):
                         InventoryItem.item_id,
                         Item.name,
                         Item.script,
+                        Item.use_limit,
+                        Item.cooldown,
                         InventoryItem.amount
                     )
                     .join(Item, InventoryItem.item_id == Item.id)
@@ -121,9 +123,13 @@ class InventoryRepository(BaseDAO):
                         item_id=item_id,
                         name=name,
                         script=script,
+                        use_limit=use_limit,
+                        cooldown=cooldown,
                         amount=amount
                     )
-                    for item_id, name, script, amount in items_data
+                    for item_id, name, script, use_limit, cooldown, amount in (
+                        items_data
+                    )
                 ]
                 return InventoryResponse(
                     user_id=user_id,
@@ -222,7 +228,6 @@ class InventoryRepository(BaseDAO):
     async def get_inventories_with_item(
         cls,
         item_id: int,
-        #promotion_id: int | None
     ):
         async with get_session() as session:
             async with session.begin():
@@ -237,6 +242,8 @@ class InventoryRepository(BaseDAO):
                         Inventory.user_id,
                         Item.name,
                         Item.script,
+                        Item.use_limit,
+                        Item.cooldown,
                         Item.shop_item_id,
                         InventoryItem.amount
                     )
@@ -256,6 +263,8 @@ class InventoryRepository(BaseDAO):
                     user_id,
                     name,
                     script,
+                    use_limit,
+                    cooldown,
                     shop_item_id,
                     amount
                  ) in items_data:
@@ -268,6 +277,8 @@ class InventoryRepository(BaseDAO):
                         'item_id': item_id,
                         'name': name,
                         'script': script,
+                        'use_limit': use_limit,
+                        'cooldown': cooldown,
                         'shop_item_id': shop_item_id,
                         'amount': amount
                     })
@@ -280,6 +291,8 @@ class InventoryRepository(BaseDAO):
                                 name=item['name'],
                                 shop_item_id=item['shop_item_id'],
                                 script=item['script'],
+                                use_limit=item['use_limit'],
+                                cooldown=item['cooldown'],
                                 amount=item['amount']
                             )
                             for item in data['linked_items']

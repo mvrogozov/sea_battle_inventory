@@ -101,6 +101,7 @@ class InventoryService:
                 fields = item_to_inventory.model_dump()
                 fields.update({'user_id': user.user_id})
                 return await self.inventory_repository.add_item(**fields)
+            raise NotFoundError('Инвентарь пользователя не найден.')
         except NotFoundError:
             raise
 
