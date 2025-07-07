@@ -65,7 +65,52 @@ services:
       - "9090:9090"
     volumes:
       - ./prometheus.yml:/etc/prometheus/prometheus.yml
-      #- prometheusdata:/prometheus
+    networks:
+      - monitoring-net
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter
+    container_name: nginx-exporter
+    ports:
+      - "127.0.0.1:9113:9113"
+    command:
+      - '-nginx.scrape-uri=http://nginx/nginx_status'
+    restart: unless-stopped
+    depends_on:
+      - nginx
+    networks:
+      - monitoring-net
+
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    ports:
+      - "9187:9187"
+    env_file:
+      - .env
+    environment:
+      - DATA_SOURCE_NAME=postgresql://$POSTGRES_USER:$POSTGRES_PASSWORD@postgresdb:5432/$POSTGRES_DB?sslmode=disable
+    restart: unless-stopped
+    depends_on:
+      - postgresdb
+    networks:
+      - monitoring-net
+
+  node-exporter:
+    image: prom/node-exporter
+    container_name: node-exporter
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--path.rootfs=/rootfs'
+    restart: unless-stopped
     networks:
       - monitoring-net
 
@@ -80,15 +125,10 @@ services:
     volumes:
       - ./grafana/dashboards:/etc/grafana/provisioning/dashboards
       - ./grafana/provisioning/dashboards:/etc/grafana/provisioning/dashboards
-      #- grafana:/var/lib/grafana
     depends_on:
       - prometheus
     networks:
       - monitoring-net
-
-# volumes:
-#   prometheusdata:
-#   grafana:
 
 networks:
   monitoring-net:
