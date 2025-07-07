@@ -1,0 +1,57 @@
+name: inventory-test
+services:
+
+  postgresdb-test:
+    image: postgres:16-alpine
+    container_name: db-inventory-test
+    restart: "no"
+    environment:
+      POSTGRES_DB: inventory_test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+    ports:
+      - '5433:5432'
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U test_user -d inventory_test"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend-test:
+    container_name: backend-inventory-test
+    build:
+      context: ../
+      dockerfile: ./app/Dockerfile.test
+    restart: "no"
+    environment:
+      # База данных
+      DATABASE_URL: postgresql+asyncpg://test_user:test_password@postgresdb-test:5432/inventory_test
+      DB_HOST: postgresdb-test
+      POSTGRES_USER: test_user
+      POSTGRES_PASSWORD: test_password
+      POSTGRES_DB: inventory_test
+      DB_PORT: 5432
+      
+      # Redis (замокирован в тестах)
+      REDIS_HOST: localhost
+      REDIS_PORT: 6379
+      
+      # Kafka (замокирован в тестах)
+      KAFKA_SERVER: localhost:9092
+      
+      # Тестовые настройки
+      TESTING: "true"
+      LOG_PATH: /application/app/logs
+      CACHE_EXPIRE: 3600
+    depends_on:
+      postgresdb-test:
+        condition: service_healthy
+    volumes:
+      - ../tests:/application/tests
+      - ../app:/application/app
+    command: ["pytest", "--maxfail=10", "--disable-warnings", "-v", "--tb=short"]
+
+volumes:
+  postgres_test_data: 
