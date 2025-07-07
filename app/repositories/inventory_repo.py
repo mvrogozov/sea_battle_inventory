@@ -19,10 +19,12 @@ class InventoryRepository(BaseDAO):
     model = Inventory
 
     @classmethod
-    async def add_for_current_user(cls, user_id):
+    async def add_for_current_user(cls, user: UserInfo):
         async with get_session() as session:
             async with session.begin():
-                query = select(exists().where(cls.model.user_id == user_id))
+                query = select(exists().where(
+                    cls.model.user_id == user.user_id)
+                )
                 obj = await session.exec(query)
                 obj = obj.one()
                 if obj[0]:
@@ -30,7 +32,7 @@ class InventoryRepository(BaseDAO):
                         detail='Already exists',
                         status_code=status.HTTP_409_CONFLICT
                     )
-                new_instance = cls.model(user_id=user_id)
+                new_instance = cls.model(user_id=user.user_id)
                 session.add(new_instance)
                 return new_instance
 
