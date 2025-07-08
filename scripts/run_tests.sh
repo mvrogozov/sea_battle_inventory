@@ -9,18 +9,18 @@ echo "Запуск тестов в контейнерах..."
 
 # Останавливаем и удаляем существующие тестовые контейнеры
 echo "Очистка предыдущих тестовых контейнеров..."
-docker compose -f infra/docker-compose.test.yaml down -v --remove-orphans 2>/dev/null || true
+docker-compose -f infra/docker-compose.test.yaml down -v --remove-orphans 2>/dev/null || true
 
 # Запускаем тесты
 echo "Запуск тестовых контейнеров..."
-docker compose -f infra/docker-compose.test.yaml up --build --abort-on-container-exit
+docker-compose -f infra/docker-compose.test.yaml up --build --abort-on-container-exit
 
 # Получаем код выхода из тестового контейнера (до его остановки)
-TEST_EXIT_CODE=$(docker compose -f infra/docker-compose.test.yaml ps -q backend-test | head -1 | xargs docker inspect -f '{{.State.ExitCode}}' 2>/dev/null || echo "0")
+TEST_EXIT_CODE=$(docker-compose -f infra/docker-compose.test.yaml ps -q backend-test | head -1 | xargs docker inspect -f '{{.State.ExitCode}}' 2>/dev/null || echo "0")
 
 # Останавливаем и удаляем контейнеры
 echo "Очистка тестовых контейнеров..."
-docker compose -f infra/docker-compose.test.yaml down -v --remove-orphans
+docker-compose -f infra/docker-compose.test.yaml down -v --remove-orphans
 
 # Удаляем тестовые образы
 echo "Удаление тестовых образов..."
