@@ -48,7 +48,6 @@ async def create_inventory(
         "Доступно только администраторам"
     ),
     description="Поля для добавления",
-    tags=["admin"]
 )
 async def add_to_inventory(
         item_to_inventory: ItemToInventory,
