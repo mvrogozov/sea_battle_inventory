@@ -76,7 +76,9 @@ class TestItemService:
         item_data = ItemCreate(
             name="New Item",
             description="New description",
-            kind=ItemKind.CONSUMABLE
+            kind=ItemKind.CONSUMABLE,
+            use_limit=10,
+            cooldown=0
         )
         new_item = Item(
             id=1,
@@ -105,7 +107,9 @@ class TestItemService:
         item_data = ItemCreate(
             name="New Item",
             description="New description",
-            kind=ItemKind.CONSUMABLE
+            kind=ItemKind.CONSUMABLE,
+            use_limit=10,
+            cooldown=0
         )
         mock_request = MagicMock()
         mock_request.app = MagicMock()
@@ -123,7 +127,9 @@ class TestItemService:
         item_data = ItemCreate(
             name="Existing Item",
             description="Description",
-            kind=ItemKind.CONSUMABLE
+            kind=ItemKind.CONSUMABLE,
+            use_limit=10,
+            cooldown=0
         )
         item_service.item_repository.check_name_exists = AsyncMock(return_value=True)
         mock_request = MagicMock()
@@ -268,7 +274,9 @@ class TestInventoryService:
                     name="Test Item",
                     amount=5,
                     script="",
-                    promotion_id=None
+                    promotion_id=None,
+                    use_limit=10,
+                    cooldown=0
                 )
             ]
         )
@@ -306,7 +314,9 @@ class TestInventoryService:
                     name="Test Item",
                     amount=5,
                     script="",
-                    promotion_id=None
+                    promotion_id=None,
+                    use_limit=10,
+                    cooldown=0
                 )
             ]
         )

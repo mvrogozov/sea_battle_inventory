@@ -187,6 +187,54 @@ class TestAuthentication:
                 assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
                 assert exc_info.value.detail == 'Wrong token'
 
+    @pytest.mark.asyncio
+    async def test_jwt_token_with_user_id(self):
+        """Тест JWT токена с user_id"""
+        token = "token_with_user_id"
+        with patch('app.inventory.common.HTTPAuthorizationCredentials') as mock_credentials:
+            mock_credentials.return_value.credentials = token
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.return_value = {
+                    'user_id': 123,
+                    'role': 'user',
+                    'exp': 1751408591
+                }
+                user = await get_current_user(mock_credentials())
+                assert user.user_id == 123
+                assert user.role == 'user'
+
+    @pytest.mark.asyncio
+    async def test_jwt_token_with_sub(self):
+        """Тест JWT токена с sub вместо user_id"""
+        token = "token_with_sub"
+        with patch('app.inventory.common.HTTPAuthorizationCredentials') as mock_credentials:
+            mock_credentials.return_value.credentials = token
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.return_value = {
+                    'sub': 456,
+                    'role': 'user',
+                    'exp': 1751408591
+                }
+                user = await get_current_user(mock_credentials())
+                assert user.user_id == 456
+                assert user.role == 'user'
+
+    @pytest.mark.asyncio
+    async def test_jwt_token_missing_user_id_and_sub(self):
+        """Тест JWT токена без user_id и sub"""
+        token = "token_missing_user_id_and_sub"
+        with patch('app.inventory.common.HTTPAuthorizationCredentials') as mock_credentials:
+            mock_credentials.return_value.credentials = token
+            with patch('jwt.decode') as mock_decode:
+                mock_decode.return_value = {
+                    'role': 'user',
+                    'exp': 1751408591
+                }
+                with pytest.raises(HTTPException) as exc_info:
+                    await get_current_user(mock_credentials())
+                assert exc_info.value.status_code == status.HTTP_401_UNAUTHORIZED
+                assert exc_info.value.detail == 'Token must contains user_id and role'
+
 
 class TestAuthorization:
     """Тесты для проверки ролей и разрешений"""

@@ -19,7 +19,9 @@ class TestItemsAPI:
                 kind=ItemKind.CONSUMABLE,
                 description="Test description",
                 script="",
-                shop_item_id=None
+                shop_item_id=None,
+                use_limit=10,
+                cooldown=0
             )
         ]
         mock_item_service.get_all_items.return_value = mock_items
@@ -41,7 +43,9 @@ class TestItemsAPI:
             kind=ItemKind.CONSUMABLE,
             description="Test description",
             script="",
-            shop_item_id=None
+            shop_item_id=None,
+            use_limit=10,
+            cooldown=0
         )
         mock_item_service.get_item.return_value = mock_item
 
@@ -76,7 +80,9 @@ class TestItemsAPI:
             "description": "New description",
             "kind": "расходник",
             "script": "",
-            "promotion_id": None
+            "promotion_id": None,
+            "use_limit": 10,
+            "cooldown": 0
         }
         mock_item = ItemResponse(
             id=1,
@@ -84,7 +90,9 @@ class TestItemsAPI:
             kind=ItemKind.CONSUMABLE,
             description="New description",
             script="",
-            shop_item_id=None
+            shop_item_id=None,
+            use_limit=10,
+            cooldown=0
         )
         mock_item_service.create_item.return_value = mock_item
 
@@ -109,7 +117,9 @@ class TestItemsAPI:
             "description": "New description",
             "kind": "расходник",
             "script": "",
-            "promotion_id": None
+            "promotion_id": None,
+            "use_limit": 10,
+            "cooldown": 0
         }
 
         # Act
@@ -126,7 +136,9 @@ class TestItemsAPI:
             "description": "New description",
             "kind": "расходник",
             "script": "",
-            "promotion_id": None
+            "promotion_id": None,
+            "use_limit": 10,
+            "cooldown": 0
         }
         from app.exceptions import NotAdminError
         mock_item_service.create_item.side_effect = NotAdminError("Not admin")

@@ -184,7 +184,9 @@ class TestInventoryAPI:
                     name="Test Item",
                     amount=5,
                     script="",
-                    promotion_id=None
+                    promotion_id=None,
+                    use_limit=10,
+                    cooldown=0
                 )
             ]
         )
