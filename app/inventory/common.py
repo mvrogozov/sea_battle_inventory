@@ -40,7 +40,8 @@ async def get_current_user(
         decoded = jwt.decode(token, options={'verify_signature': False})
         user_id = decoded.get('user_id', None)
         if not user_id:
-            user_id = decoded.get('sub')
+            if decoded.get('sub'):
+                user_id = int(decoded.get('sub'))
         role = decoded.get('role')
         if not user_id or not role:
             raise HTTPException(
