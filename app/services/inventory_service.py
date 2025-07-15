@@ -1,5 +1,6 @@
 import logging
 import os
+import asyncio
 import json
 from logging.handlers import RotatingFileHandler
 
@@ -219,22 +220,31 @@ class KafkaConsumer:
     async def consume_message(self):
         """Получение сообщения из kafka"""
 
-        consumer = AIOKafkaConsumer(
-            self.topic_name,
-            bootstrap_servers=self.bootstrap_servers,
-            group_id=self.group_id,
-            auto_offset_reset='earliest'
-        )
-        await consumer.start()
-        logger.info('Starting concuming kafka...')
+        while True:
+            try:
+                self.consumer = AIOKafkaConsumer(
+                    self.topic_name,
+                    bootstrap_servers=self.bootstrap_servers,
+                    group_id=self.group_id,
+                    heartbeat_interval_ms=10000,
+                    auto_offset_reset='earliest'
+                )
+                await self.consumer.start()
+                logger.info('Starting concuming kafka...')
 
-        try:
-            async for msg in consumer:
-                await self.process_message(msg)
-        except Exception as e:
-            logger.error(f'Consumer error: {e}')
-        finally:
-            await consumer.stop()
+                try:
+                    async for msg in self.consumer:
+                        await self.process_message(msg)
+                except Exception as e:
+                    logger.error(f'Consumer message processing error: {e}')
+            except asyncio.CancelledError:
+                logger.info("Consumer stopped by application")
+                break
+            except Exception as e:
+                logger.error(f"Consumer failed: {e}. Reconnecting...")
+                await asyncio.sleep(5)
+            finally:
+                await self.consumer.stop()
 
     async def process_message(self, msg):
         try:
