@@ -232,11 +232,12 @@ class KafkaConsumer:
                 await self.consumer.start()
                 logger.info('Starting concuming kafka...')
 
-                try:
-                    async for msg in self.consumer:
+                async for msg in self.consumer:
+                    try:
                         await self.process_message(msg)
-                except Exception as e:
-                    logger.error(f'Consumer message processing error: {e}')
+                    except Exception as e:
+                        logger.error(f'Consumer message processing error: {e}')
+                        continue
             except asyncio.CancelledError:
                 logger.info("Consumer stopped by application")
                 break
